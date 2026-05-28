@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0d12">
+<title>Senderismo Oso</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%230d0d12'/><path d='M20 140 L65 75 L92 110 L120 60 L160 140 Z' fill='%23c4a7ff'/><circle cx='135' cy='40' r='14' fill='%23ffd66b'/></svg>">
+<style>
+  :root {
+    --bg: #0d0d12;
+    --bg-2: #14141b;
+    --bg-3: #1d1d28;
+    --border: #2a2a38;
+    --text: #ececf1;
+    --text-dim: #9a9aaf;
+    --accent: #c4a7ff;
+    --accent-2: #9b7ff0;
+    --yellow: #ffd66b;
+    --green: #7be88a;
+    --green-dark: #2f6b3a;
+    --red: #ff7878;
+    --blue: #7cc4ff;
+    --orange: #ffaa55;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.4; }
+  body { max-width: 520px; margin: 0 auto; padding-bottom: 80px; min-height: 100vh; }
+  h1, h2, h3, h4 { margin: 0 0 8px; font-weight: 700; }
+  h1 { font-size: 22px; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; color: var(--accent); }
+  a { color: var(--accent); }
+  button { font: inherit; cursor: pointer; }
+
+  /* Header */
+  header { position: sticky; top: 0; z-index: 30; background: var(--bg); padding: 12px 14px 0; border-bottom: 1px solid var(--border); }
+  .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .title-row h1 { color: var(--accent); }
+  .title-row .sub { font-size: 12px; color: var(--text-dim); }
+  .tabs { display: flex; gap: 6px; }
+  .tabs button { flex: 1; background: var(--bg-2); color: var(--text-dim); border: 1px solid var(--border); padding: 8px 6px; border-radius: 10px 10px 0 0; border-bottom: none; font-size: 13px; font-weight: 600; }
+  .tabs button.active { background: var(--bg-3); color: var(--accent); border-color: var(--accent); }
+
+  /* Filtros */
+  .filters { padding: 12px 14px; background: var(--bg-2); border-bottom: 1px solid var(--border); }
+  .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .filter-row:last-child { margin-bottom: 0; }
+  .chip { background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); padding: 5px 10px; border-radius: 14px; font-size: 12px; font-weight: 600; }
+  .chip.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .filter-label { font-size: 11px; color: var(--text-dim); width: 100%; text-transform: uppercase; letter-spacing: 0.05em; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  input[type="text"], input[type="search"], select { width: 100%; background: var(--bg-3); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+  select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%), linear-gradient(135deg, var(--accent) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
+  .price-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
+  .price-row input { flex: 1; }
+  .stat-bar { padding: 10px 14px; background: var(--bg-2); font-size: 12px; color: var(--text-dim); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .stat-bar .reset { background: transparent; color: var(--accent); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; font-size: 11px; }
+
+  /* Cards */
+  main { padding: 12px 14px; }
+  .card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; position: relative; transition: border-color 0.15s; }
+  .card.estado-interesada { border-color: var(--accent); }
+  .card.estado-planeada { border-color: var(--blue); }
+  .card.estado-confirmada { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+  .card.estado-completada { border-color: var(--green-dark); opacity: 0.7; }
+  .card.estado-descartada { opacity: 0.45; }
+  .card.pfps-risk::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--red); border-radius: 14px 0 0 14px; }
+  .card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .card .name { font-weight: 700; font-size: 16px; line-height: 1.2; }
+  .card .subtitulo { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 10px; background: var(--bg-3); color: var(--text-dim); font-weight: 600; }
+  .badge.nivel-1 { background: #1e2a1e; color: var(--green); }
+  .badge.nivel-2 { background: #1e2a1e; color: var(--green); }
+  .badge.nivel-25 { background: #2a2a1e; color: var(--yellow); }
+  .badge.nivel-3 { background: #2a2a1e; color: var(--yellow); }
+  .badge.nivel-35 { background: #2a221e; color: var(--orange); }
+  .badge.nivel-4 { background: #2a1e1e; color: var(--red); font-weight: 700; }
+  .badge.nivel-5 { background: var(--red); color: var(--bg); font-weight: 700; }
+  .badge.compania { background: var(--bg-3); color: var(--accent); }
+  .badge.price { background: var(--bg-3); color: var(--yellow); }
+  .badge.days { background: var(--bg-3); color: var(--blue); }
+  .card .actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .card .actions button { background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 600; flex: 1; min-width: 70px; }
+  .card .actions button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .card .actions button[data-estado="confirmada"].active { background: var(--green); border-color: var(--green); }
+  .card .actions button[data-estado="planeada"].active { background: var(--blue); border-color: var(--blue); }
+  .card .actions button[data-estado="descartada"].active { background: var(--red); border-color: var(--red); }
+  .card .actions button[data-estado="completada"].active { background: var(--green-dark); border-color: var(--green-dark); color: var(--text); }
+  .card .nota { font-size: 12px; color: var(--text-dim); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-style: italic; }
+  .card .pfps-warning { font-size: 12px; color: var(--red); font-weight: 700; margin-top: 6px; }
+  .card .compare-toggle { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 6px; background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); font-size: 12px; padding: 0; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .card .compare-toggle.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  /* Calendar */
+  .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-head { font-size: 10px; color: var(--text-dim); text-align: center; padding: 4px 0; text-transform: uppercase; font-weight: 700; }
+  .cal-cell { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 4px; min-height: 56px; font-size: 11px; color: var(--text-dim); position: relative; cursor: pointer; }
+  .cal-cell.has { color: var(--text); }
+  .cal-cell.empty { background: transparent; border: none; cursor: default; }
+  .cal-cell.weekend { background: #14141b; }
+  .cal-cell.festivo { background: #1f1623; border-color: var(--accent); }
+  .cal-cell .day-num { font-weight: 700; font-size: 13px; color: var(--text); }
+  .cal-cell .day-num.dim { color: var(--text-dim); }
+  .cal-cell .dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
+  .cal-cell .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cal-cell .dot.lv-2 { background: var(--green); }
+  .cal-cell .dot.lv-25 { background: var(--green); }
+  .cal-cell .dot.lv-3 { background: var(--yellow); }
+  .cal-cell .dot.lv-35 { background: var(--orange); }
+  .cal-cell .dot.lv-4 { background: var(--red); }
+  .cal-cell .dot.lv-5 { background: var(--red); border: 1px solid #fff; }
+  .cal-cell.selected { outline: 2px solid var(--accent); }
+
+  /* Comparador */
+  .compare-empty { text-align: center; padding: 30px 14px; color: var(--text-dim); }
+  .compare-grid { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .compare-grid table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .compare-grid th, .compare-grid td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  .compare-grid th { background: var(--bg-2); color: var(--accent); font-weight: 700; }
+  .compare-grid td { background: var(--bg-2); }
+  .compare-grid .label-col { background: var(--bg-3); color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; width: 100px; }
+
+  /* Empty / errors */
+  .empty { text-align: center; padding: 40px 14px; color: var(--text-dim); }
+  .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+
+  /* Bottom bar */
+  .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto; background: var(--bg-2); border-top: 1px solid var(--border); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; z-index: 40; }
+  .bottom-bar .stats { font-size: 11px; color: var(--text-dim); }
+  .bottom-bar .stats strong { color: var(--accent); font-size: 14px; }
+  .bottom-bar .export { background: var(--bg-3); color: var(--accent); border: 1px solid var(--border); padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+
+  /* Modal */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: flex-end; justify-content: center; z-index: 60; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--bg-2); width: 100%; max-width: 520px; max-height: 85vh; border-radius: 16px 16px 0 0; padding: 16px; overflow-y: auto; }
+  .modal h2 { color: var(--accent); }
+  .modal .close { background: var(--bg-3); color: var(--text); border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; width: 100%; margin-top: 14px; font-weight: 700; }
+  .modal ul { padding-left: 20px; }
+  .modal li { margin-bottom: 4px; font-size: 13px; }
+
+  /* Utilities */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-row">
+    <div>
+      <h1>🥾 Senderismo Oso</h1>
+      <div class="sub">A Todo Pulmón · Caminantes 2.0 · Junio 2026</div>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button data-view="catalogo" class="active">Catálogo</button>
+    <button data-view="calendario">Calendario</button>
+    <button data-view="comparador">Comparar</button>
+  </div>
+</header>
+
+<section class="filters" id="filters">
+  <div class="filter-row">
+    <div class="filter-label">Compañía</div>
+    <button class="chip active" data-filter="compania" data-value="all">Todas</button>
+    <button class="chip" data-filter="compania" data-value="atp">A Todo Pulmón</button>
+    <button class="chip" data-filter="compania" data-value="ea">Caminantes 2.0</button>
+  </div>
+  <div class="filter-row">
+    <div class="filter-label">Nivel (multi-toggle)</div>
+    <button class="chip active" data-filter="nivel" data-value="all">Todos</button>
+    <button class="chip" data-filter="nivel" data-value="1">1</button>
+    <button class="chip" data-filter="nivel" data-value="2">2</button>
+    <button class="chip" data-filter="nivel" data-value="2.5">2.5</button>
+    <button class="chip" data-filter="nivel" data-value="3">3</button>
+    <button class="chip" data-filter="nivel" data-value="3.5">3.5</button>
+    <button class="chip" data-filter="nivel" data-value="4">4 ⚠</button>
+    <button class="chip" data-filter="nivel" data-value="5">5 ⚠</button>
+  </div>
+  <div class="filter-row">
+    <div class="filter-label">Duración</div>
+    <button class="chip active" data-filter="dias" data-value="all">Toda</button>
+    <button class="chip" data-filter="dias" data-value="1">1 día</button>
+    <button class="chip" data-filter="dias" data-value="multi">Multi-día</button>
+  </div>
+  <div class="filter-row">
+    <div class="filter-label">Día de semana (multi-toggle)</div>
+    <button class="chip active" data-filter="dow" data-value="all">Todos</button>
+    <button class="chip" data-filter="dow" data-value="1">Lun</button>
+    <button class="chip" data-filter="dow" data-value="2">Mar</button>
+    <button class="chip" data-filter="dow" data-value="3">Mié</button>
+    <button class="chip" data-filter="dow" data-value="4">Jue</button>
+    <button class="chip" data-filter="dow" data-value="5">Vie</button>
+    <button class="chip" data-filter="dow" data-value="6">Sáb</button>
+    <button class="chip" data-filter="dow" data-value="0">Dom</button>
+  </div>
+  <div class="filter-row">
+    <div class="filter-label">Precio máx</div>
+    <div class="price-row">
+      <input type="range" id="priceMax" min="50000" max="900000" step="10000" value="900000">
+      <span id="priceMaxLabel">$900.000</span>
+    </div>
+  </div>
+  <div class="filter-row">
+    <div class="filter-label">Estado</div>
+    <button class="chip active" data-filter="estado" data-value="all">Todas</button>
+    <button class="chip" data-filter="estado" data-value="marcadas">Mis seleccionadas</button>
+    <button class="chip" data-filter="estado" data-value="sin-descartar">Sin descartadas</button>
+  </div>
+  <div class="filter-row">
+    <input type="search" id="search" placeholder="🔎 Buscar por nombre, lugar, palabra…">
+  </div>
+</section>
+
+<div class="stat-bar">
+  <div id="statText">Cargando…</div>
+  <button class="reset" id="resetFilters">Reset filtros</button>
+</div>
+
+<main id="content">
+  <div class="loading">Cargando rutas…</div>
+</main>
+
+<div class="bottom-bar">
+  <div class="stats">
+    <div><strong id="countInteres">0</strong> marcadas · <strong id="countConfirmadas">0</strong> confirmadas</div>
+    <div>Estimado: <strong id="totalCop">$0</strong></div>
+  </div>
+  <button class="export" id="exportBtn">Exportar</button>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+"use strict";
+
+const LS_KEY = "senderismo_oso_v1";
+const FMT_COP = n => "$" + (n||0).toLocaleString("es-CO");
+const FMT_FECHA = iso => {
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString("es-CO", { day: "numeric", month: "short", weekday: "short" });
+};
+const FESTIVOS_JUN_2026 = ["2026-06-08","2026-06-15","2026-06-29"];
+const PFPS_RISK_MIN = 4;
+
+let DATA = { _meta: {}, companias: {}, rutas: [] };
+let STATE = loadState();
+let FILTERS = {
+  compania: "all",
+  nivel: [],
+  dias: "all",
+  dow: [],
+  estado: "all",
+  precioMax: 900000,
+  search: ""
+};
+let VIEW = "catalogo";
+let CAL_SELECTED_DAY = null;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { console.warn("loadState fail", e); }
+  return { rutas: {}, compare: [] };
+}
+
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }
+  catch (e) { console.warn("saveState fail", e); }
+}
+
+function setEstado(id, estado) {
+  if (!STATE.rutas[id]) STATE.rutas[id] = {};
+  if (STATE.rutas[id].estado === estado) {
+    delete STATE.rutas[id].estado;
+  } else {
+    STATE.rutas[id].estado = estado;
+  }
+  saveState();
+  renderCurrent();
+  renderBottomBar();
+}
+
+function toggleCompare(id) {
+  const i = STATE.compare.indexOf(id);
+  if (i >= 0) STATE.compare.splice(i, 1);
+  else {
+    if (STATE.compare.length >= 3) {
+      STATE.compare.shift();
+    }
+    STATE.compare.push(id);
+  }
+  saveState();
+  renderCurrent();
+  renderBottomBar();
+}
+
+function getEstado(id) { return STATE.rutas[id]?.estado || null; }
+function inCompare(id) { return STATE.compare.includes(id); }
+
+function nivelClass(n) {
+  if (n === 2.5) return "nivel-25";
+  if (n === 3.5) return "nivel-35";
+  return "nivel-" + Math.floor(n);
+}
+
+function nivelLabel(n) { return DATA._meta?.escala_nivel?.[String(n)] || ("Nivel " + n); }
+
+function applyFilters(rutas) {
+  return rutas.filter(r => {
+    if (FILTERS.compania !== "all" && r.compania !== FILTERS.compania) return false;
+    if (FILTERS.nivel.length && !FILTERS.nivel.includes(r.nivel)) return false;
+    if (FILTERS.dias === "1" && r.dias !== 1) return false;
+    if (FILTERS.dias === "multi" && r.dias <= 1) return false;
+    if (FILTERS.dow.length) {
+      const start = new Date(r.fecha_inicio + "T12:00:00");
+      const end = new Date(r.fecha_fin + "T12:00:00");
+      let match = false;
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+        if (FILTERS.dow.includes(d.getDay())) { match = true; break; }
+      }
+      if (!match) return false;
+    }
+    if (FILTERS.precioMax && r.precio_cop > FILTERS.precioMax) return false;
+    if (FILTERS.estado === "marcadas" && !["interesada","planeada","confirmada","completada"].includes(getEstado(r.id))) return false;
+    if (FILTERS.estado === "sin-descartar" && getEstado(r.id) === "descartada") return false;
+    if (FILTERS.search) {
+      const q = FILTERS.search.toLowerCase();
+      const hay = [r.nombre, r.subtitulo, r.ubicacion, r.punto_encuentro, (r.incluye||[]).join(" "), r.notas].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function sortByFecha(rutas) {
+  return [...rutas].sort((a,b) => (a.fecha_inicio||"").localeCompare(b.fecha_inicio||"") || a.nombre.localeCompare(b.nombre));
+}
+
+function cardHTML(r) {
+  const estado = getEstado(r.id);
+  const cls = ["card"];
+  if (estado) cls.push("estado-" + estado);
+  if (r.nivel >= PFPS_RISK_MIN) cls.push("pfps-risk");
+  const cia = DATA.companias[r.compania]?.nombre || r.compania;
+  const fechaTxt = r.fecha_inicio === r.fecha_fin
+    ? FMT_FECHA(r.fecha_inicio)
+    : FMT_FECHA(r.fecha_inicio) + " → " + FMT_FECHA(r.fecha_fin);
+  const compareCls = inCompare(r.id) ? "compare-toggle active" : "compare-toggle";
+  const precioDesde = r.precio_desde ? "desde " : "";
+  const pfpsWarn = r.nivel >= PFPS_RISK_MIN
+    ? `<div class="pfps-warning">⚠ Nivel ${r.nivel} — riesgo PFPS. Bastones obligatorios, ritmo descenso lento.</div>`
+    : "";
+  return `
+    <div class="${cls.join(" ")}" data-id="${r.id}">
+      <button class="${compareCls}" data-act="compare" title="Comparar">⇄</button>
+      <div class="top">
+        <div style="flex:1; min-width:0">
+          <div class="name">${escapeHtml(r.nombre)}</div>
+          ${r.subtitulo ? `<div class="subtitulo">${escapeHtml(r.subtitulo)}</div>` : ""}
+        </div>
+      </div>
+      <div class="meta">
+        <span class="badge compania">${escapeHtml(cia)}</span>
+        <span class="badge ${nivelClass(r.nivel)}">Nivel ${r.nivel} · ${escapeHtml(nivelLabel(r.nivel))}</span>
+        <span class="badge price">${precioDesde}${FMT_COP(r.precio_cop)}</span>
+        <span class="badge days">${r.dias === 1 ? "1 día" : r.dias + " días"}</span>
+        <span class="badge">${fechaTxt}</span>
+        ${r.ubicacion ? `<span class="badge">📍 ${escapeHtml(r.ubicacion)}</span>` : ""}
+      </div>
+      ${pfpsWarn}
+      ${r.notas ? `<div class="nota">${escapeHtml(r.notas)}</div>` : ""}
+      <div class="actions">
+        <button data-act="estado" data-estado="interesada" class="${estado==="interesada"?"active":""}">★ Interés</button>
+        <button data-act="estado" data-estado="planeada" class="${estado==="planeada"?"active":""}">📅 Planeada</button>
+        <button data-act="estado" data-estado="confirmada" class="${estado==="confirmada"?"active":""}">✓ Confirmada</button>
+        <button data-act="estado" data-estado="completada" class="${estado==="completada"?"active":""}">🏁 Hecha</button>
+        <button data-act="estado" data-estado="descartada" class="${estado==="descartada"?"active":""}">✗ Descartar</button>
+        <button data-act="detalle">Detalle</button>
+      </div>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+}
+
+function renderCatalogo() {
+  const rutas = sortByFecha(applyFilters(DATA.rutas));
+  const $c = document.getElementById("content");
+  if (!rutas.length) { $c.innerHTML = `<div class="empty">Sin rutas con esos filtros.</div>`; return; }
+  $c.innerHTML = rutas.map(cardHTML).join("");
+  document.getElementById("statText").textContent = `${rutas.length} ruta${rutas.length===1?"":"s"} · de ${DATA.rutas.length} en catálogo`;
+}
+
+function renderCalendario() {
+  const rutas = applyFilters(DATA.rutas);
+  const byDay = {};
+  rutas.forEach(r => {
+    const start = new Date(r.fecha_inicio + "T12:00:00");
+    const end = new Date(r.fecha_fin + "T12:00:00");
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+      const key = d.toISOString().slice(0,10);
+      (byDay[key] = byDay[key] || []).push(r);
+    }
+  });
+
+  const year = 2026, month = 5; // jun
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  const startDow = (firstDay.getDay() + 6) % 7; // lun=0
+  const totalDays = lastDay.getDate();
+
+  const head = ["L","M","X","J","V","S","D"];
+  let html = `<div class="calendar">`;
+  head.forEach(h => html += `<div class="cal-head">${h}</div>`);
+  for (let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
+  for (let day = 1; day <= totalDays; day++) {
+    const date = `2026-06-${String(day).padStart(2,"0")}`;
+    const rutas = byDay[date] || [];
+    const dow = new Date(year, month, day).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isFestivo = FESTIVOS_JUN_2026.includes(date);
+    const cls = ["cal-cell"];
+    if (rutas.length) cls.push("has");
+    if (isWeekend) cls.push("weekend");
+    if (isFestivo) cls.push("festivo");
+    if (CAL_SELECTED_DAY === date) cls.push("selected");
+    const dots = rutas.slice(0,12).map(r => `<span class="dot ${nivelClass(r.nivel)}"></span>`).join("");
+    html += `<div class="${cls.join(" ")}" data-date="${date}">
+      <div class="day-num">${day}</div>
+      <div class="dots">${dots}</div>
+    </div>`;
+  }
+  html += `</div>`;
+
+  if (CAL_SELECTED_DAY) {
+    const rutas = sortByFecha(byDay[CAL_SELECTED_DAY] || []);
+    const titulo = FMT_FECHA(CAL_SELECTED_DAY);
+    html += `<h3 style="margin: 18px 0 10px">${titulo} · ${rutas.length} ruta${rutas.length===1?"":"s"}</h3>`;
+    html += rutas.map(cardHTML).join("") || `<div class="empty">Sin rutas este día.</div>`;
+  } else {
+    html += `<div class="empty" style="padding: 20px">Toca un día para ver rutas. Puntos = rutas; color = nivel.</div>`;
+  }
+
+  document.getElementById("content").innerHTML = html;
+  document.getElementById("statText").textContent = `Junio 2026 · ${rutas.length} rutas filtradas`;
+}
+
+function renderComparador() {
+  const ids = STATE.compare.slice(0, 3);
+  const $c = document.getElementById("content");
+  if (!ids.length) {
+    $c.innerHTML = `<div class="compare-empty">Marca el botón <strong>⇄</strong> en hasta 3 rutas para compararlas aquí.</div>`;
+    document.getElementById("statText").textContent = "0 rutas seleccionadas para comparar";
+    return;
+  }
+  const rutas = ids.map(id => DATA.rutas.find(r => r.id === id)).filter(Boolean);
+  const labels = [
+    ["Compañía", r => escapeHtml(DATA.companias[r.compania]?.nombre || r.compania)],
+    ["Nivel", r => `${r.nivel} · ${escapeHtml(nivelLabel(r.nivel))}`],
+    ["Fechas", r => r.fecha_inicio === r.fecha_fin ? FMT_FECHA(r.fecha_inicio) : FMT_FECHA(r.fecha_inicio) + " → " + FMT_FECHA(r.fecha_fin)],
+    ["Días", r => r.dias],
+    ["Precio", r => (r.precio_desde?"desde ":"") + FMT_COP(r.precio_cop)],
+    ["Ubicación", r => escapeHtml(r.ubicacion || "—")],
+    ["Punto enc.", r => escapeHtml(r.punto_encuentro || "—")],
+    ["Incluye", r => (r.incluye||[]).length ? (r.incluye).map(escapeHtml).join("<br>") : "—"],
+    ["Notas", r => escapeHtml(r.notas || "—")],
+    ["PFPS", r => r.nivel >= PFPS_RISK_MIN ? "⚠ Riesgo alto" : "OK"],
+    ["Mi estado", r => escapeHtml(getEstado(r.id) || "—")]
+  ];
+  let html = `<div class="compare-grid"><table>
+    <thead><tr><th class="label-col"></th>${rutas.map(r => `<th>${escapeHtml(r.nombre)}</th>`).join("")}</tr></thead>
+    <tbody>`;
+  labels.forEach(([lbl, fn]) => {
+    html += `<tr><td class="label-col">${lbl}</td>${rutas.map(r => `<td>${fn(r)}</td>`).join("")}</tr>`;
+  });
+  html += `</tbody></table></div>
+  <button class="export" style="margin-top: 14px; width: 100%" id="clearCompare">Limpiar comparador</button>`;
+  $c.innerHTML = html;
+  document.getElementById("statText").textContent = `${rutas.length} ruta${rutas.length===1?"":"s"} en comparador`;
+  document.getElementById("clearCompare").onclick = () => { STATE.compare = []; saveState(); renderCurrent(); renderBottomBar(); };
+}
+
+function renderCurrent() {
+  if (VIEW === "catalogo") renderCatalogo();
+  else if (VIEW === "calendario") renderCalendario();
+  else if (VIEW === "comparador") renderComparador();
+}
+
+function renderBottomBar() {
+  const ids = Object.keys(STATE.rutas);
+  let interes = 0, confirmadas = 0, total = 0;
+  ids.forEach(id => {
+    const est = STATE.rutas[id].estado;
+    if (!est || est === "descartada") return;
+    if (est === "confirmada") confirmadas++;
+    if (["interesada","planeada","confirmada","completada"].includes(est)) {
+      interes++;
+      const r = DATA.rutas.find(x => x.id === id);
+      if (r) total += r.precio_cop || 0;
+    }
+  });
+  document.getElementById("countInteres").textContent = interes;
+  document.getElementById("countConfirmadas").textContent = confirmadas;
+  document.getElementById("totalCop").textContent = FMT_COP(total);
+}
+
+function openModal(r) {
+  const cia = DATA.companias[r.compania];
+  const fechaTxt = r.fecha_inicio === r.fecha_fin ? FMT_FECHA(r.fecha_inicio) : FMT_FECHA(r.fecha_inicio) + " → " + FMT_FECHA(r.fecha_fin);
+  const html = `
+    <h2>${escapeHtml(r.nombre)}</h2>
+    ${r.subtitulo ? `<p style="color: var(--text-dim); margin-top:0">${escapeHtml(r.subtitulo)}</p>` : ""}
+    <p><strong>Compañía:</strong> ${escapeHtml(cia?.nombre || r.compania)}</p>
+    ${cia?.contacto ? `<p><strong>Contacto:</strong> <a href="https://wa.me/57${cia.contacto.replace(/\\D/g,"")}">${escapeHtml(cia.contacto)}</a></p>` : ""}
+    ${cia?.web ? `<p><strong>Web:</strong> <a href="https://${cia.web}" target="_blank" rel="noopener">${escapeHtml(cia.web)}</a></p>` : ""}
+    <p><strong>Fechas:</strong> ${fechaTxt} (${r.dias} día${r.dias===1?"":"s"})</p>
+    <p><strong>Nivel:</strong> ${r.nivel} — ${escapeHtml(nivelLabel(r.nivel))} <em>(orig: ${escapeHtml(r.nivel_original||"—")})</em></p>
+    <p><strong>Precio:</strong> ${r.precio_desde?"desde ":""}${FMT_COP(r.precio_cop)}</p>
+    ${r.ubicacion ? `<p><strong>Ubicación:</strong> ${escapeHtml(r.ubicacion)}</p>` : ""}
+    ${r.punto_encuentro ? `<p><strong>Punto encuentro:</strong> ${escapeHtml(r.punto_encuentro)}</p>` : ""}
+    ${r.incluye && r.incluye.length ? `<p><strong>Incluye:</strong></p><ul>${r.incluye.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>` : ""}
+    ${r.notas ? `<p style="color: var(--text-dim)"><em>${escapeHtml(r.notas)}</em></p>` : ""}
+    ${r.nivel >= PFPS_RISK_MIN ? `<p style="color: var(--red); font-weight: 700">⚠ Riesgo PFPS — nivel ${r.nivel}.<br>Bastones, ritmo descenso lento, rodilleras si knee-check no es "bien".</p>` : ""}
+    <button class="close" id="closeModal">Cerrar</button>
+  `;
+  document.getElementById("modal").innerHTML = html;
+  document.getElementById("modalBg").classList.add("open");
+  document.getElementById("closeModal").onclick = closeModal;
+}
+function closeModal() { document.getElementById("modalBg").classList.remove("open"); }
+
+function exportData() {
+  const marcadas = DATA.rutas
+    .filter(r => {
+      const e = getEstado(r.id);
+      return e && e !== "descartada";
+    })
+    .sort((a,b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
+  let txt = "🥾 ITINERARIO SENDERISMO — " + new Date().toLocaleDateString("es-CO") + "\n\n";
+  if (!marcadas.length) txt += "(Sin rutas marcadas)\n";
+  marcadas.forEach(r => {
+    const est = getEstado(r.id);
+    const fechaTxt = r.fecha_inicio === r.fecha_fin ? r.fecha_inicio : `${r.fecha_inicio} → ${r.fecha_fin}`;
+    txt += `[${est.toUpperCase()}] ${fechaTxt} · ${r.nombre}${r.subtitulo?` (${r.subtitulo})`:""}\n`;
+    txt += `  Nivel ${r.nivel} · ${(r.precio_desde?"desde ":"")}${FMT_COP(r.precio_cop)} · ${DATA.companias[r.compania]?.nombre||r.compania}\n`;
+    if (r.nivel >= PFPS_RISK_MIN) txt += `  ⚠ PFPS riesgo alto\n`;
+    txt += "\n";
+  });
+  const total = marcadas.reduce((s,r) => s + (r.precio_cop||0), 0);
+  txt += `\nTOTAL ESTIMADO: ${FMT_COP(total)}\n`;
+  if (navigator.share) {
+    navigator.share({ text: txt, title: "Itinerario Senderismo" }).catch(() => fallbackCopy(txt));
+  } else fallbackCopy(txt);
+}
+function fallbackCopy(txt) {
+  navigator.clipboard?.writeText(txt).then(
+    () => alert("Itinerario copiado al portapapeles ✓"),
+    () => prompt("Copia manual:", txt)
+  );
+}
+
+function attachEvents() {
+  document.getElementById("tabs").addEventListener("click", e => {
+    const b = e.target.closest("button[data-view]"); if (!b) return;
+    VIEW = b.dataset.view;
+    document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x === b));
+    renderCurrent();
+  });
+  document.getElementById("filters").addEventListener("click", e => {
+    const b = e.target.closest("button.chip"); if (!b) return;
+    const f = b.dataset.filter, v = b.dataset.value;
+    if (f === "nivel" || f === "dow") {
+      if (v === "all") {
+        FILTERS[f] = [];
+      } else {
+        const num = parseInt(v, 10);
+        const parsed = f === "nivel" ? parseFloat(v) : num;
+        const i = FILTERS[f].indexOf(parsed);
+        if (i >= 0) FILTERS[f].splice(i, 1);
+        else FILTERS[f].push(parsed);
+      }
+      const all = FILTERS[f].length === 0;
+      document.querySelectorAll(`#filters button[data-filter="${f}"]`).forEach(x => {
+        const xv = x.dataset.value;
+        if (xv === "all") x.classList.toggle("active", all);
+        else {
+          const parsed = f === "nivel" ? parseFloat(xv) : parseInt(xv, 10);
+          x.classList.toggle("active", FILTERS[f].includes(parsed));
+        }
+      });
+    } else {
+      FILTERS[f] = v;
+      document.querySelectorAll(`#filters button[data-filter="${f}"]`).forEach(x => x.classList.toggle("active", x === b));
+    }
+    renderCurrent();
+  });
+  const priceMax = document.getElementById("priceMax");
+  priceMax.addEventListener("input", () => {
+    FILTERS.precioMax = +priceMax.value;
+    document.getElementById("priceMaxLabel").textContent = FMT_COP(FILTERS.precioMax);
+  });
+  priceMax.addEventListener("change", renderCurrent);
+  document.getElementById("search").addEventListener("input", e => {
+    FILTERS.search = e.target.value.trim();
+    renderCurrent();
+  });
+  document.getElementById("resetFilters").addEventListener("click", () => {
+    FILTERS = { compania: "all", nivel: [], dias: "all", dow: [], estado: "all", precioMax: 900000, search: "" };
+    document.querySelectorAll("#filters .chip").forEach(c => c.classList.toggle("active", c.dataset.value === "all"));
+    document.getElementById("priceMax").value = 900000;
+    document.getElementById("priceMaxLabel").textContent = "$900.000";
+    document.getElementById("search").value = "";
+    renderCurrent();
+  });
+  document.getElementById("content").addEventListener("click", e => {
+    const cell = e.target.closest(".cal-cell[data-date]");
+    if (cell && VIEW === "calendario") {
+      CAL_SELECTED_DAY = CAL_SELECTED_DAY === cell.dataset.date ? null : cell.dataset.date;
+      renderCalendario();
+      return;
+    }
+    const card = e.target.closest(".card[data-id]");
+    if (!card) return;
+    const id = card.dataset.id;
+    const r = DATA.rutas.find(x => x.id === id);
+    if (!r) return;
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    if (btn.dataset.act === "estado") setEstado(id, btn.dataset.estado);
+    else if (btn.dataset.act === "compare") toggleCompare(id);
+    else if (btn.dataset.act === "detalle") openModal(r);
+  });
+  document.getElementById("modalBg").addEventListener("click", e => {
+    if (e.target.id === "modalBg") closeModal();
+  });
+  document.getElementById("exportBtn").addEventListener("click", exportData);
+}
+
+async function init() {
+  attachEvents();
+  try {
+    const res = await fetch("./data/rutas.json?v=" + Date.now());
+    DATA = await res.json();
+  } catch (e) {
+    document.getElementById("content").innerHTML = `<div class="empty">Error cargando rutas.json. Sirve este archivo desde un servidor (no <code>file://</code>).</div>`;
+    console.error(e);
+    return;
+  }
+  renderCurrent();
+  renderBottomBar();
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
+}
+
+init();
+</script>
+</body>
+</html>

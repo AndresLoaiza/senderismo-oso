@@ -1,0 +1,19 @@
+{
+  "name": "Senderismo Oso",
+  "short_name": "Senderismo",
+  "description": "Planeador de rutas de senderismo — A Todo Pulmón + Caminantes 2.0",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0d12",
+  "theme_color": "#0d0d12",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0d12'/><path d='M64 400 L180 220 L260 320 L340 180 L448 400 Z' fill='%23c4a7ff'/><circle cx='380' cy='110' r='40' fill='%23ffd66b'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
