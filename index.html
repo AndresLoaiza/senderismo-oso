@@ -82,6 +82,7 @@
   .badge.compania { background: var(--bg-3); color: var(--accent); }
   .badge.price { background: var(--bg-3); color: var(--yellow); }
   .badge.days { background: var(--bg-3); color: var(--blue); }
+  .badge.km { background: var(--bg-3); color: var(--green); }
   .card .actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
   .card .actions button { background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 600; flex: 1; min-width: 70px; }
   .card .actions button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
@@ -371,6 +372,7 @@ function cardHTML(r) {
         <span class="badge ${nivelClass(r.nivel)}">Nivel ${r.nivel} · ${escapeHtml(nivelLabel(r.nivel))}</span>
         <span class="badge price">${precioDesde}${FMT_COP(r.precio_cop)}</span>
         <span class="badge days">${r.dias === 1 ? "1 día" : r.dias + " días"}</span>
+        ${r.km_aprox != null ? `<span class="badge km">📏 ~${r.km_aprox} km</span>` : ""}
         <span class="badge">${fechaTxt}</span>
         ${r.ubicacion ? `<span class="badge">📍 ${escapeHtml(r.ubicacion)}</span>` : ""}
       </div>
@@ -469,6 +471,7 @@ function renderComparador() {
     ["Fechas", r => r.fecha_inicio === r.fecha_fin ? FMT_FECHA(r.fecha_inicio) : FMT_FECHA(r.fecha_inicio) + " → " + FMT_FECHA(r.fecha_fin)],
     ["Días", r => r.dias],
     ["Precio", r => (r.precio_desde?"desde ":"") + FMT_COP(r.precio_cop)],
+    ["Distancia", r => r.km_aprox != null ? `~${r.km_aprox} km` : "—"],
     ["Ubicación", r => escapeHtml(r.ubicacion || "—")],
     ["Punto enc.", r => escapeHtml(r.punto_encuentro || "—")],
     ["Incluye", r => (r.incluye||[]).length ? (r.incluye).map(escapeHtml).join("<br>") : "—"],
@@ -525,6 +528,7 @@ function openModal(r) {
     <p><strong>Fechas:</strong> ${fechaTxt} (${r.dias} día${r.dias===1?"":"s"})</p>
     <p><strong>Nivel:</strong> ${r.nivel} — ${escapeHtml(nivelLabel(r.nivel))} <em>(orig: ${escapeHtml(r.nivel_original||"—")})</em></p>
     <p><strong>Precio:</strong> ${r.precio_desde?"desde ":""}${FMT_COP(r.precio_cop)}</p>
+    ${r.km_aprox != null ? `<p><strong>Distancia aprox:</strong> ~${r.km_aprox} km</p>` : ""}
     ${r.ubicacion ? `<p><strong>Ubicación:</strong> ${escapeHtml(r.ubicacion)}</p>` : ""}
     ${r.punto_encuentro ? `<p><strong>Punto encuentro:</strong> ${escapeHtml(r.punto_encuentro)}</p>` : ""}
     ${r.incluye && r.incluye.length ? `<p><strong>Incluye:</strong></p><ul>${r.incluye.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>` : ""}
