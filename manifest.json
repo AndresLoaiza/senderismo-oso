@@ -5,12 +5,12 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0d0d12",
-  "theme_color": "#0d0d12",
+  "background_color": "#07120d",
+  "theme_color": "#07120d",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0d12'/><path d='M64 400 L180 220 L260 320 L340 180 L448 400 Z' fill='%23c4a7ff'/><circle cx='380' cy='110' r='40' fill='%23ffd66b'/></svg>",
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%2307120d'/><circle cx='368' cy='156' r='44' fill='%23FBBF24'/><path d='M64 404 L200 208 L286 326 L348 240 L452 404 Z' fill='%2310B981'/></svg>",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"

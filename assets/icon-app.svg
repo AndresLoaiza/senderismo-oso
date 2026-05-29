@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Senderismo Oso app icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c1f17"></stop>
+      <stop offset="1" stop-color="#07120d"></stop>
+    </linearGradient>
+    <linearGradient id="peak2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34D399"></stop>
+      <stop offset="1" stop-color="#10B981"></stop>
+    </linearGradient>
+    <radialGradient id="sun2" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FDE68A"></stop>
+      <stop offset="1" stop-color="#FBBF24"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"></rect>
+  <rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#1f3d30" stroke-width="2"></rect>
+  <circle cx="368" cy="156" r="44" fill="url(#sun2)"></circle>
+  <path d="M64 404 L200 208 L286 326 L348 240 L452 404 Z" fill="url(#peak2)"></path>
+  <path d="M200 208 L235 258 L213 276 L173 250 Z" fill="#07120d" opacity="0.30"></path>
+</svg>

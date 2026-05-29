@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Senderismo Oso">
+  <defs>
+    <linearGradient id="peak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34D399"></stop>
+      <stop offset="1" stop-color="#10B981"></stop>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FDE68A"></stop>
+      <stop offset="1" stop-color="#FBBF24"></stop>
+    </radialGradient>
+  </defs>
+  <circle cx="372" cy="150" r="46" fill="url(#sun)"></circle>
+  <path d="M48 408 L196 196 L286 320 L350 232 L464 408 Z" fill="url(#peak)"></path>
+  <path d="M196 196 L233 250 L210 268 L168 240 Z" fill="#07120d" opacity="0.28"></path>
+</svg>
