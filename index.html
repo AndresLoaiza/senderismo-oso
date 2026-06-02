@@ -272,7 +272,7 @@
   <div class="title-row">
     <div>
       <h1><svg class="ico ico-brand" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> Senderismo Oso</h1>
-      <div class="sub">A Todo Pulmón · Caminantes 2.0 · Junio 2026</div>
+      <div class="sub">A Todo Pulmón · Caminantes 2.0 · Entre Yarumos · Vámonos de Caminata · Junio 2026</div>
     </div>
   </div>
   <div class="tabs" id="tabs">
@@ -288,6 +288,8 @@
     <button class="chip active" data-filter="compania" data-value="all">Todas</button>
     <button class="chip" data-filter="compania" data-value="atp">A Todo Pulmón</button>
     <button class="chip" data-filter="compania" data-value="ea">Caminantes 2.0</button>
+    <button class="chip" data-filter="compania" data-value="eyt">Entre Yarumos</button>
+    <button class="chip" data-filter="compania" data-value="vdc">Vámonos de Caminata</button>
   </div>
   <div class="filter-row">
     <div class="filter-label">Nivel (multi-toggle)</div>
@@ -320,8 +322,8 @@
   <div class="filter-row">
     <div class="filter-label">Precio máx</div>
     <div class="price-row">
-      <input type="range" id="priceMax" min="50000" max="900000" step="10000" value="900000">
-      <span id="priceMaxLabel">$900.000</span>
+      <input type="range" id="priceMax" min="50000" max="2600000" step="10000" value="2600000">
+      <span id="priceMaxLabel">$2.600.000</span>
     </div>
   </div>
   <div class="filter-row">
@@ -398,7 +400,7 @@ let FILTERS = {
   dias: "all",
   dow: [],
   estado: "all",
-  precioMax: 900000,
+  precioMax: 2600000,
   search: ""
 };
 let VIEW = "catalogo";
@@ -759,10 +761,10 @@ function attachEvents() {
     renderCurrent();
   });
   document.getElementById("resetFilters").addEventListener("click", () => {
-    FILTERS = { compania: "all", nivel: [], dias: "all", dow: [], estado: "all", precioMax: 900000, search: "" };
+    FILTERS = { compania: "all", nivel: [], dias: "all", dow: [], estado: "all", precioMax: 2600000, search: "" };
     document.querySelectorAll("#filters .chip").forEach(c => c.classList.toggle("active", c.dataset.value === "all"));
-    document.getElementById("priceMax").value = 900000;
-    document.getElementById("priceMaxLabel").textContent = "$900.000";
+    document.getElementById("priceMax").value = 2600000;
+    document.getElementById("priceMaxLabel").textContent = "$2.600.000";
     document.getElementById("search").value = "";
     renderCurrent();
   });
