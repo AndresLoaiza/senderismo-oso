@@ -255,6 +255,10 @@
   .search-wrap input[type="search"] { border: none; background: none; border-radius: 0; padding: 11px 0; }
   .search-wrap input[type="search"]:focus { box-shadow: none; border: none; }
 
+  /* Weather spinner */
+  .wx-spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; vertical-align: -2px; animation: wx-rot .7s linear infinite; }
+  @keyframes wx-rot { to { transform: rotate(360deg); } }
+
   /* Utilities */
   .hidden { display: none !important; }
 
@@ -391,6 +395,48 @@ const FMT_FECHA = iso => {
 };
 const FESTIVOS_JUN_2026 = ["2026-06-08","2026-06-15","2026-06-29"];
 const PFPS_RISK_MIN = 4;
+
+// Coords lat/lng por ubicación (municipios Antioquia/Colombia). Clima Open-Meteo es mejora progresiva.
+const COORDS = {
+  "la ceja": [6.0297, -75.4314], "la ceja del tambo": [6.0297, -75.4314], "cocorna": [6.0586, -75.1853], "sonson": [5.7117, -75.3106],
+  "santa elena": [6.2086, -75.5008], "el carmen de viboral": [6.0817, -75.3372], "carmen de viboral": [6.0817, -75.3372],
+  "venecia": [5.9636, -75.7344], "sabaneta": [6.1517, -75.6167], "mutata": [7.2436, -76.4350],
+  "murillo": [4.8736, -75.1714], "guarne": [6.2792, -75.4422], "envigado": [6.1700, -75.5836],
+  "el retiro": [6.0586, -75.5028], "copacabana": [6.3461, -75.5089], "caldas": [6.0911, -75.6356],
+  "belmira": [6.6058, -75.6678], "yolombo": [6.5947, -75.0131], "villavieja": [3.2197, -75.2178],
+  "versalles": [6.0586, -75.5028], "tamesis": [5.6650, -75.7136], "suroeste": [5.6200, -75.8500],
+  "santo domingo": [6.4719, -75.1656], "santa rosa de osos": [6.6469, -75.4603], "santa rita": [5.6906, -75.8800],
+  "san rafael": [6.2933, -75.0269], "san luis": [6.0431, -74.9939], "san jose de la montana": [6.8497, -75.6850],
+  "san cristobal": [6.2858, -75.6386], "san carlos": [6.1881, -74.9931], "penon": [6.0589, -73.8419],
+  "el penon": [6.0589, -73.8419], "norcasia": [5.5756, -74.8889], "mesetas": [3.3811, -74.0444],
+  "la union": [5.9739, -75.3614], "la danta": [5.9700, -74.8300], "jardin": [5.5981, -75.8186],
+  "isla fuerte": [9.3878, -76.1789], "guican": [6.4631, -72.4119], "gomez plata": [6.6839, -75.2156],
+  "fredonia": [5.9261, -75.6736], "el santuario": [6.1364, -75.2647], "el penol": [6.2189, -75.2433],
+  "doradal": [5.9706, -74.7158], "rio claro": [5.9706, -74.7158], "concepcion": [6.3939, -75.2589],
+  "bello": [6.3378, -75.5614], "barichara": [6.6356, -73.2236], "barbosa": [6.4392, -75.3308],
+  "andes": [5.6569, -75.8792], "amaga": [6.0386, -75.7028], "puerto nare": [6.1881, -74.9931]
+};
+// Normaliza texto ubicación: minúsculas sin acentos
+function _norm(s) {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+// Busca coords por ubicacion: parte el texto en tokens (/, ,, -, paréntesis) y prueba cada uno contra COORDS
+function resolveCoords(ubicacion) {
+  if (!ubicacion) return null;
+  const tokens = _norm(ubicacion).split(/[\/,()\-]/).map(t => t.trim()).filter(Boolean);
+  for (const t of tokens) {
+    if (COORDS[t]) return COORDS[t];
+  }
+  return null;
+}
+async function getWeather(lat, lng, dateStr) {
+  const url = `https://api.open-meteo.com/v1/forecast?` +
+    `latitude=${lat}&longitude=${lng}` +
+    `&daily=temperature_2m_max,precipitation_sum,wind_speed_10m_max` +
+    `&timezone=America%2FBogota&start_date=${dateStr}&end_date=${dateStr}`;
+  const d = await fetch(url).then(r => r.json());
+  return d.daily;
+}
 
 let DATA = { _meta: {}, companias: {}, rutas: [] };
 let STATE = loadState();
@@ -677,11 +723,44 @@ function openModal(r) {
     ${r.incluye && r.incluye.length ? `<p><strong>Incluye:</strong></p><ul>${r.incluye.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>` : ""}
     ${r.notas ? `<p style="color: var(--text-dim)"><em>${escapeHtml(r.notas)}</em></p>` : ""}
     ${r.nivel >= PFPS_RISK_MIN ? `<p style="color: var(--red); font-weight: 700">${ICON("alert",15)} Riesgo PFPS — nivel ${r.nivel}.<br>Bastones, ritmo descenso lento, rodilleras si knee-check no es "bien".</p>` : ""}
+    <div id="weatherRow"></div>
     <button class="close" id="closeModal">Cerrar</button>
   `;
   document.getElementById("modal").innerHTML = html;
   document.getElementById("modalBg").classList.add("open");
   document.getElementById("closeModal").onclick = closeModal;
+  loadWeather(r);
+}
+
+// Clima en modal: solo si fecha dentro próximos 16 días, no pasada, y hay coords. Degrada en silencio.
+async function loadWeather(r) {
+  const row = document.getElementById("weatherRow");
+  if (!row) return;
+  const coords = resolveCoords(r.ubicacion);
+  if (!coords) return;
+  const fecha = r.fecha_inicio;
+  if (!fecha) return;
+  // Días hasta la ruta (medianoche local)
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const dia = new Date(fecha + "T12:00:00"); dia.setHours(0, 0, 0, 0);
+  const diffDias = Math.round((dia - hoy) / 86400000);
+  if (diffDias < 0 || diffDias > 16) return; // ya pasó o fuera de rango forecast
+  row.innerHTML = `<p style="color: var(--text-dim)"><span class="wx-spin"></span> Cargando clima…</p>`;
+  try {
+    const daily = await getWeather(coords[0], coords[1], fecha);
+    const t = daily?.temperature_2m_max?.[0];
+    const p = daily?.precipitation_sum?.[0];
+    const w = daily?.wind_speed_10m_max?.[0];
+    if (t == null) { row.innerHTML = ""; return; }
+    const lluvia = p == null ? "" : (p === 0 ? "🌤 Sin lluvia" : (p > 5 ? `🌧 Lluvia (${Math.round(p)}mm)` : `🌧 ${Math.round(p)}mm`));
+    const partes = [`☀️ ${Math.round(t)}°C`];
+    if (lluvia) partes.push(lluvia);
+    if (w != null) partes.push(`💨 ${Math.round(w)}km/h`);
+    row.innerHTML = `<p style="background: var(--bg-3); border:1px solid var(--border); border-radius:10px; padding:8px 12px">` +
+      `<strong>Clima:</strong> ${partes.join(" · ")}</p>`;
+  } catch (e) {
+    row.innerHTML = ""; // fetch falló → no romper modal
+  }
 }
 function closeModal() { document.getElementById("modalBg").classList.remove("open"); }
 

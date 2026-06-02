@@ -1,4 +1,4 @@
-const CACHE = 'senderismo-oso-v5';
+const CACHE = 'senderismo-oso-v6';
 const ASSETS = ['./', './index.html', './manifest.json', './data/rutas.json'];
 
 self.addEventListener('install', e => {
@@ -15,6 +15,11 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Clima Open-Meteo: network-only, no cachear (forecast cambia a diario)
+  if (e.request.url.includes('api.open-meteo.com')) {
+    e.respondWith(fetch(e.request).catch(() => Response.error()));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(resp => {
       const copy = resp.clone();
