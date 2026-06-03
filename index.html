@@ -255,9 +255,14 @@
   .search-wrap input[type="search"] { border: none; background: none; border-radius: 0; padding: 11px 0; }
   .search-wrap input[type="search"]:focus { box-shadow: none; border: none; }
 
-  /* Weather spinner */
+  /* Weather */
   .wx-spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; vertical-align: -2px; animation: wx-rot .7s linear infinite; }
   @keyframes wx-rot { to { transform: rotate(360deg); } }
+  .wx-card { background: var(--bg-3); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 6px; }
+  .wx-title { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); font-weight: 700; margin-bottom: 6px; }
+  .wx-head { font-size: 15px; margin-bottom: 6px; color: var(--text); }
+  .wx-line { font-size: 13px; color: var(--text); margin: 2px 0; }
+  .wx-note { font-size: 11px; color: var(--text-dim); margin-top: 7px; }
 
   /* Utilities */
   .hidden { display: none !important; }
@@ -432,10 +437,53 @@ function resolveCoords(ubicacion) {
 async function getWeather(lat, lng, dateStr) {
   const url = `https://api.open-meteo.com/v1/forecast?` +
     `latitude=${lat}&longitude=${lng}` +
-    `&daily=temperature_2m_max,precipitation_sum,wind_speed_10m_max` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max` +
+    `&hourly=precipitation,weather_code` +
     `&timezone=America%2FBogota&start_date=${dateStr}&end_date=${dateStr}`;
-  const d = await fetch(url).then(r => r.json());
-  return d.daily;
+  return await fetch(url).then(r => r.json());
+}
+// WMO weather_code → [descripción es, emoji]
+function wmoDesc(c) {
+  const m = {
+    0: ["Despejado", "☀️"], 1: ["Mayormente despejado", "🌤"], 2: ["Parcialmente nublado", "⛅"], 3: ["Nublado", "☁️"],
+    45: ["Niebla", "🌫"], 48: ["Niebla con escarcha", "🌫"],
+    51: ["Llovizna ligera", "🌦"], 53: ["Llovizna", "🌦"], 55: ["Llovizna intensa", "🌧"],
+    56: ["Llovizna helada", "🌧"], 57: ["Llovizna helada", "🌧"],
+    61: ["Lluvia ligera", "🌦"], 63: ["Lluvia", "🌧"], 65: ["Lluvia fuerte", "🌧"],
+    66: ["Lluvia helada", "🌧"], 67: ["Lluvia helada", "🌧"],
+    71: ["Nieve ligera", "🌨"], 73: ["Nieve", "🌨"], 75: ["Nieve fuerte", "🌨"], 77: ["Granizo", "🌨"],
+    80: ["Chubascos ligeros", "🌦"], 81: ["Chubascos", "🌧"], 82: ["Chubascos fuertes", "⛈"],
+    85: ["Chubascos de nieve", "🌨"], 86: ["Chubascos de nieve", "🌨"],
+    95: ["Tormenta eléctrica", "⛈"], 96: ["Tormenta con granizo", "⛈"], 99: ["Tormenta con granizo", "⛈"]
+  };
+  return m[c] || ["Condición desconocida", "🌡"];
+}
+// Franja del día por hora (0-23) → nombre
+function franjaNombre(h) {
+  if (h < 6) return "madrugada";
+  if (h < 12) return "mañana";
+  if (h < 18) return "tarde";
+  return "noche";
+}
+// De hourly.precipitation arma rangos horarios con lluvia (≥0.2mm) → texto "7–10h, 15–17h"
+function rangosLluvia(times, precs) {
+  if (!times || !precs) return { texto: "", franjas: [] };
+  const rainy = [];
+  for (let i = 0; i < times.length; i++) {
+    if (precs[i] != null && precs[i] >= 0.2) rainy.push(+times[i].slice(11, 13));
+  }
+  if (!rainy.length) return { texto: "", franjas: [] };
+  // rangos contiguos
+  const rangos = [];
+  let ini = rainy[0], prev = rainy[0];
+  for (let i = 1; i < rainy.length; i++) {
+    if (rainy[i] === prev + 1) { prev = rainy[i]; }
+    else { rangos.push([ini, prev]); ini = prev = rainy[i]; }
+  }
+  rangos.push([ini, prev]);
+  const texto = rangos.map(([a, b]) => a === b ? `${a}h` : `${a}–${b + 1}h`).join(", ");
+  const franjas = [...new Set(rainy.map(franjaNombre))];
+  return { texto, franjas };
 }
 
 let DATA = { _meta: {}, companias: {}, rutas: [] };
@@ -747,17 +795,37 @@ async function loadWeather(r) {
   if (diffDias < 0 || diffDias > 16) return; // ya pasó o fuera de rango forecast
   row.innerHTML = `<p style="color: var(--text-dim)"><span class="wx-spin"></span> Cargando clima…</p>`;
   try {
-    const daily = await getWeather(coords[0], coords[1], fecha);
-    const t = daily?.temperature_2m_max?.[0];
-    const p = daily?.precipitation_sum?.[0];
-    const w = daily?.wind_speed_10m_max?.[0];
-    if (t == null) { row.innerHTML = ""; return; }
-    const lluvia = p == null ? "" : (p === 0 ? "🌤 Sin lluvia" : (p > 5 ? `🌧 Lluvia (${Math.round(p)}mm)` : `🌧 ${Math.round(p)}mm`));
-    const partes = [`☀️ ${Math.round(t)}°C`];
-    if (lluvia) partes.push(lluvia);
-    if (w != null) partes.push(`💨 ${Math.round(w)}km/h`);
-    row.innerHTML = `<p style="background: var(--bg-3); border:1px solid var(--border); border-radius:10px; padding:8px 12px">` +
-      `<strong>Clima:</strong> ${partes.join(" · ")}</p>`;
+    const data = await getWeather(coords[0], coords[1], fecha);
+    const d = data?.daily;
+    const tmax = d?.temperature_2m_max?.[0];
+    if (tmax == null) { row.innerHTML = ""; return; }
+    const tmin = d?.temperature_2m_min?.[0];
+    const code = d?.weather_code?.[0];
+    const mm = d?.precipitation_sum?.[0];
+    const prob = d?.precipitation_probability_max?.[0];
+    const wind = d?.wind_speed_10m_max?.[0];
+    const [desc, emo] = wmoDesc(code);
+    const { texto: horasTxt, franjas } = rangosLluvia(data?.hourly?.time, data?.hourly?.precipitation);
+
+    // Veredicto: ¿sol o lluvia? (combina prob, mm y código)
+    const llueve = (prob != null && prob >= 50) || (mm != null && mm >= 1) || (code >= 51 && code <= 99);
+    const verdict = llueve ? "Probablemente llueva" : (code >= 1 && code <= 3 ? "Mayormente seco, algo nublado" : "Día seco");
+
+    // Líneas
+    const lineas = [];
+    lineas.push(`<div class="wx-head">${emo} <strong>${escapeHtml(desc)}</strong> — ${verdict}</div>`);
+    lineas.push(`<div class="wx-line">🌡 ${Math.round(tmax)}° máx${tmin != null ? ` · ${Math.round(tmin)}° mín` : ""}</div>`);
+    if (llueve || horasTxt) {
+      let r2 = `🌧 ${prob != null ? prob + "% prob · " : ""}~${mm != null ? Math.round(mm) : 0}mm`;
+      if (horasTxt) r2 += ` · sobre todo ${franjas.join("/")} (${horasTxt})`;
+      lineas.push(`<div class="wx-line">${r2}</div>`);
+    } else {
+      lineas.push(`<div class="wx-line">🌤 Sin lluvia esperada</div>`);
+    }
+    if (wind != null) lineas.push(`<div class="wx-line">💨 Viento hasta ${Math.round(wind)} km/h</div>`);
+
+    row.innerHTML = `<div class="wx-card"><div class="wx-title">Clima previsto</div>${lineas.join("")}` +
+      `<div class="wx-note">Pronóstico Open-Meteo · puede cambiar</div></div>`;
   } catch (e) {
     row.innerHTML = ""; // fetch falló → no romper modal
   }
