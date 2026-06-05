@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07120d">
-<title>Senderismo Oso</title>
+<title>Senderismoso</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%2307120d'/><circle cx='130' cy='55' r='16' fill='%23FBBF24'/><path d='M22 142 L70 73 L100 115 L122 84 L158 142 Z' fill='%2310B981'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,7 @@
   /* Fonts: Sora (display) · Manrope (UI/body) · JetBrains Mono (stats). Fallback to system if offline. */
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap');
   :root {
-    /* Dark biophilic + glass — Senderismo Oso design system */
+    /* Dark biophilic + glass — Senderismoso design system */
     --font-display: 'Sora', 'Segoe UI', system-ui, sans-serif;
     --font-ui: 'Manrope', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
@@ -280,7 +280,7 @@
 <header>
   <div class="title-row">
     <div>
-      <h1><svg class="ico ico-brand" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> Senderismo Oso</h1>
+      <h1><svg class="ico ico-brand" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> Senderismoso</h1>
       <div class="sub">A Todo Pulmón · Caminantes 2.0 · Entre Yarumos · Vámonos de Caminata · Junio 2026</div>
     </div>
   </div>
@@ -392,7 +392,7 @@ function ICON(name, size) {
   return `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name] || ""}</svg>`;
 }
 
-const LS_KEY = "senderismo_oso_v1";
+const LS_KEY = "senderismoso_v1";
 const FMT_COP = n => "$" + (n||0).toLocaleString("es-CO");
 const FMT_FECHA = iso => {
   const d = new Date(iso + "T12:00:00");

@@ -1,4 +1,4 @@
-const CACHE = 'senderismo-oso-v7';
+const CACHE = 'senderismoso-v7';
 const ASSETS = ['./', './index.html', './manifest.json', './data/rutas.json'];
 
 self.addEventListener('install', e => {

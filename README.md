@@ -1,4 +1,4 @@
-# Senderismo Oso
+# Senderismoso
 
 Planeador de rutas de senderismo en Antioquia. PWA single-file. Catálogo de programaciones mensuales de **A Todo Pulmón** y **Caminantes 2.0 / Explora Antioquia**.
 
