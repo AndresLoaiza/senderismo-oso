@@ -9,6 +9,8 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%2307120d'/><circle cx='130' cy='55' r='16' fill='%23FBBF24'/><path d='M22 142 L70 73 L100 115 L122 84 L158 142 Z' fill='%2310B981'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" defer></script>
 <style>
   /* Fonts: Sora (display) · Manrope (UI/body) · JetBrains Mono (stats). Fallback to system if offline. */
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap');
@@ -264,6 +266,33 @@
   .wx-line { font-size: 13px; color: var(--text); margin: 2px 0; }
   .wx-note { font-size: 11px; color: var(--text-dim); margin-top: 7px; }
 
+  /* Sync gear (header) */
+  .sync-gear { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; background: var(--bg-3); border: 1px solid var(--border); color: var(--text-dim); display: grid; place-items: center; cursor: pointer; }
+  .sync-gear.connected { color: var(--accent); border-color: var(--accent); }
+
+  /* Track / caminata (bitácora) */
+  .trk-stats { display: flex; flex-wrap: wrap; gap: 6px 12px; font-family: var(--font-mono); font-size: 13px; color: var(--text); margin-bottom: 8px; }
+  .trk-stats b { color: var(--accent); font-weight: 700; }
+  .trk-stats .up { color: var(--accent); }
+  .trk-stats .down { color: var(--text-dim); }
+  .trk-profile { width: 100%; height: 72px; display: block; margin: 4px 0 8px; }
+  .trk-map { width: 100%; height: 220px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--bg-2); }
+  .trk-map .leaflet-tile-pane { filter: saturate(.85); }
+  .trk-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .trk-actions button { flex: 1; background: var(--bg-4); color: var(--text); border: 1px solid var(--border); padding: 9px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .trk-import { background: var(--accent) !important; color: var(--bg) !important; border-color: var(--accent) !important; }
+  .badge.track { color: var(--accent); border-color: var(--accent); font-family: var(--font-mono); }
+
+  /* Sync modal fields */
+  .sync-field { width: 100%; background: var(--bg-2); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; font-size: 13px; margin: 6px 0; font-family: var(--font-mono); }
+  .sync-btn { width: 100%; background: var(--accent); color: var(--bg); border: none; padding: 11px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; margin-top: 4px; }
+  .sync-btn.ghost { background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); }
+  .sync-status { font-size: 13px; margin: 8px 0; padding: 9px 12px; border-radius: 9px; background: var(--bg-3); border: 1px solid var(--border); color: var(--text-dim); }
+  .sync-status.ok { color: var(--accent); border-color: var(--accent); }
+  .sync-status.err { color: #fecaca; border-color: var(--red); }
+  .sync-help { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-top: 10px; }
+  .sync-help a { color: var(--accent-2); }
+
   /* Utilities */
   .hidden { display: none !important; }
 
@@ -283,6 +312,7 @@
       <h1><svg class="ico ico-brand" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> Senderismoso</h1>
       <div class="sub">A Todo Pulmón · Caminantes 2.0 · Entre Yarumos · Vámonos de Caminata · Junio 2026</div>
     </div>
+    <button class="sync-gear" id="syncGear" title="Sync / ajustes" aria-label="Sync y ajustes"></button>
   </div>
   <div class="tabs" id="tabs">
     <button data-view="catalogo" class="active">Catálogo</button>
@@ -370,6 +400,10 @@
   <div class="modal" id="modal"></div>
 </div>
 
+<div class="modal-bg" id="syncBg">
+  <div class="modal" id="syncModal"></div>
+</div>
+
 <script>
 "use strict";
 
@@ -385,7 +419,10 @@ const ICON_PATHS = {
   star:     '<path d="M11.5 2.8 14 8l5.7.8-4.1 4 1 5.7-5.1-2.7L6.3 18.5l1-5.7-4.1-4L8.9 8z"/>',
   flag:     '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
   x:        '<path d="M18 6 6 18M6 6l12 12"/>',
-  calendar: '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>'
+  calendar: '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>',
+  settings: '<path d="M12.2 2h-.4a2 2 0 0 0-2 2 1.7 1.7 0 0 1-2.6 1.4 2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7A1.7 1.7 0 0 1 5 12a1.7 1.7 0 0 1-.9 1.5 2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7A1.7 1.7 0 0 1 9 18.9a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2 1.7 1.7 0 0 1 2.6-1.4 2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7A1.7 1.7 0 0 1 19 12a1.7 1.7 0 0 1 .9-1.5 2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7A1.7 1.7 0 0 1 14.2 4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/>',
+  upload:   '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+  route:    '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>'
 };
 function ICON(name, size) {
   size = size || 14;
@@ -400,6 +437,16 @@ const FMT_FECHA = iso => {
 };
 const FESTIVOS_JUN_2026 = ["2026-06-08","2026-06-15","2026-06-29"];
 const PFPS_RISK_MIN = 4;
+
+// Track / GPX
+const MIN_ELE_DELTA = 4;   // m, umbral ruido GPS para subida/bajada
+const PROFILE_PTS = 120;   // submuestreo perfil elevación
+const PATH_PTS = 400;      // submuestreo polilínea mapa
+
+// Gist sync (token nunca en código: se pega en runtime, vive solo aquí)
+const PAT_KEY = "gh_pat";
+const GIST_ID_KEY = "gist_id";
+const GIST_FILE = "senderismo-oso-state.json";
 
 // Coords lat/lng por ubicación (municipios Antioquia/Colombia). Clima Open-Meteo es mejora progresiva.
 const COORDS = {
@@ -508,9 +555,64 @@ function loadState() {
   return { rutas: {}, compare: [] };
 }
 
-function saveState() {
+function saveState(opts) {
+  if (!opts || !opts.skipStamp) STATE._updated = new Date().toISOString();
   try { localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }
   catch (e) { console.warn("saveState fail", e); }
+  if (!opts || !opts.skipSync) schedulePush();
+}
+
+/* ---------- Gist sync (backup + multi-dispositivo) ---------- */
+// El token (PAT) vive solo en localStorage de este dispositivo, nunca en STATE
+// ni en el repo, así que no se sube al gist.
+function getPat() { return localStorage.getItem(PAT_KEY) || ""; }
+function ghHeaders() {
+  return { "Authorization": "Bearer " + getPat(), "Accept": "application/vnd.github+json" };
+}
+let pushTimer = null;
+function schedulePush() {
+  if (!getPat()) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { pushNow().catch(() => {}); }, 3000);
+}
+async function pushNow() {
+  const pat = getPat();
+  if (!pat) return;
+  const body = { files: { [GIST_FILE]: { content: JSON.stringify(STATE) } } };
+  let gid = localStorage.getItem(GIST_ID_KEY);
+  if (gid) {
+    const res = await fetch("https://api.github.com/gists/" + gid, {
+      method: "PATCH", headers: ghHeaders(), body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error("PATCH " + res.status);
+  } else {
+    const res = await fetch("https://api.github.com/gists", {
+      method: "POST", headers: ghHeaders(),
+      body: JSON.stringify({ description: "Senderismoso — estado", public: false, files: body.files })
+    });
+    if (!res.ok) throw new Error("POST " + res.status);
+    const g = await res.json();
+    localStorage.setItem(GIST_ID_KEY, g.id);
+  }
+  localStorage.setItem("gist_synced_at", new Date().toISOString());
+}
+async function syncPull() {
+  const pat = getPat(), gid = localStorage.getItem(GIST_ID_KEY);
+  if (!pat || !gid) return;
+  const res = await fetch("https://api.github.com/gists/" + gid, { headers: ghHeaders() });
+  if (!res.ok) throw new Error("GET " + res.status);
+  const g = await res.json();
+  const raw = g.files?.[GIST_FILE]?.content;
+  if (!raw) return;
+  const remote = JSON.parse(raw);
+  // last-write-wins: el más reciente gana
+  if ((remote._updated || "") > (STATE._updated || "")) {
+    STATE = remote;
+    saveState({ skipStamp: true, skipSync: true });
+    localStorage.setItem("gist_synced_at", new Date().toISOString());
+    renderCurrent();
+    renderBottomBar();
+  }
 }
 
 function setEstado(id, estado) {
@@ -541,6 +643,149 @@ function toggleCompare(id) {
 
 function getEstado(id) { return STATE.rutas[id]?.estado || null; }
 function inCompare(id) { return STATE.compare.includes(id); }
+function getTrack(id) { return STATE.rutas[id]?.track || null; }
+
+/* ---------- GPX import → bitácora de caminata ---------- */
+function haversine(a, b) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const la1 = a.lat * rad, la2 = b.lat * rad;
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function parseGPX(text) {
+  const doc = new DOMParser().parseFromString(text, "application/xml");
+  if (doc.querySelector("parsererror")) throw new Error("GPX inválido");
+  let nodes = [...doc.querySelectorAll("trkpt")];
+  if (!nodes.length) nodes = [...doc.querySelectorAll("rtept")]; // fallback ruta
+  const points = nodes.map(n => {
+    const lat = parseFloat(n.getAttribute("lat"));
+    const lng = parseFloat(n.getAttribute("lon"));
+    const eleN = n.querySelector("ele"), timeN = n.querySelector("time");
+    return {
+      lat, lng,
+      ele: eleN ? parseFloat(eleN.textContent) : null,
+      time: timeN ? Date.parse(timeN.textContent) : null
+    };
+  }).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  if (!points.length) throw new Error("Archivo sin recorrido (sin puntos)");
+  return points;
+}
+function sampleEvenly(arr, max) {
+  if (arr.length <= max) return arr.slice();
+  const step = (arr.length - 1) / (max - 1);
+  const out = [];
+  for (let i = 0; i < max; i++) out.push(arr[Math.round(i * step)]);
+  return out;
+}
+function computeTrack(points, fileName) {
+  let distM = 0;
+  const hasEle = points.some(p => Number.isFinite(p.ele));
+  const hasTime = points.some(p => Number.isFinite(p.time));
+  const profileRaw = []; // [distKm, alt]
+  for (let i = 0; i < points.length; i++) {
+    if (i > 0) distM += haversine(points[i-1], points[i]);
+    if (hasEle && Number.isFinite(points[i].ele)) profileRaw.push([distM/1000, points[i].ele]);
+  }
+  // Subida/bajada con umbral de ruido
+  let ascent = null, descent = null, maxAlt = null, minAlt = null;
+  if (hasEle) {
+    ascent = 0; descent = 0;
+    let anchor = null;
+    for (const p of points) {
+      if (!Number.isFinite(p.ele)) continue;
+      if (maxAlt == null || p.ele > maxAlt) maxAlt = p.ele;
+      if (minAlt == null || p.ele < minAlt) minAlt = p.ele;
+      if (anchor == null) { anchor = p.ele; continue; }
+      const d = p.ele - anchor;
+      if (Math.abs(d) >= MIN_ELE_DELTA) {
+        if (d > 0) ascent += d; else descent += -d;
+        anchor = p.ele;
+      }
+    }
+  }
+  // Duración
+  let durMin = null;
+  if (hasTime) {
+    const ts = points.map(p => p.time).filter(Number.isFinite);
+    if (ts.length >= 2) durMin = Math.round((Math.max(...ts) - Math.min(...ts)) / 60000);
+  }
+  // Polilínea mapa + bounds
+  const sampled = sampleEvenly(points, PATH_PTS);
+  const path = sampled.map(p => [p.lat, p.lng]);
+  const lats = path.map(p => p[0]), lngs = path.map(p => p[1]);
+  const bounds = [[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]];
+  return {
+    km: +(distM/1000).toFixed(2),
+    ascentM: ascent == null ? null : Math.round(ascent),
+    descentM: descent == null ? null : Math.round(descent),
+    durMin,
+    maxAlt: maxAlt == null ? null : Math.round(maxAlt),
+    minAlt: minAlt == null ? null : Math.round(minAlt),
+    importedAt: new Date().toISOString(),
+    fileName: fileName || "ruta.gpx",
+    profile: sampleEvenly(profileRaw, PROFILE_PTS),
+    path, bounds
+  };
+}
+function importGPXForRoute(id, file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const track = computeTrack(parseGPX(reader.result), file.name);
+      if (!STATE.rutas[id]) STATE.rutas[id] = {};
+      STATE.rutas[id].track = track;
+      saveState();
+      const r = DATA.rutas.find(x => x.id === id);
+      if (r) openModal(r); // re-render modal con la tarjeta
+      renderCurrent();
+    } catch (e) {
+      alert("No se pudo importar el GPX: " + e.message);
+    }
+  };
+  reader.onerror = () => alert("No se pudo leer el archivo.");
+  reader.readAsText(file);
+}
+function fmtDur(min) {
+  if (min == null) return "n/d";
+  const h = Math.floor(min/60), m = min % 60;
+  return h ? `${h}h${String(m).padStart(2,"0")}` : `${m}min`;
+}
+function elevationSVG(profile) {
+  if (!profile || profile.length < 2) return "";
+  const W = 300, H = 72, pad = 4;
+  const xs = profile.map(p => p[0]), ys = profile.map(p => p[1]);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  const sx = x => pad + (xMax === xMin ? 0 : (x - xMin)/(xMax - xMin)) * (W - 2*pad);
+  const sy = y => (H - pad) - (yMax === yMin ? 0 : (y - yMin)/(yMax - yMin)) * (H - 2*pad);
+  const pts = profile.map(p => `${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`);
+  const line = "M" + pts.join(" L");
+  const area = `${line} L${sx(xMax).toFixed(1)},${H-pad} L${sx(xMin).toFixed(1)},${H-pad} Z`;
+  return `<svg class="trk-profile" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="Perfil de elevación">
+    <path d="${area}" fill="var(--accent)" fill-opacity="0.16"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+  </svg>`;
+}
+function trackCardHTML(t) {
+  const stats = [];
+  stats.push(`<span>↔ <b>${t.km}</b> km</span>`);
+  stats.push(`<span class="up">↑ ${t.ascentM == null ? "n/d" : t.ascentM + " m"}</span>`);
+  stats.push(`<span class="down">↓ ${t.descentM == null ? "n/d" : t.descentM + " m"}</span>`);
+  stats.push(`<span>⏱ ${fmtDur(t.durMin)}</span>`);
+  if (t.maxAlt != null) stats.push(`<span>cima ${t.maxAlt} m</span>`);
+  return `<div class="wx-card">
+    <div class="wx-title">Mi caminata</div>
+    <div class="trk-stats">${stats.join("")}</div>
+    ${elevationSVG(t.profile)}
+    ${t.path && t.path.length ? `<div class="trk-map" id="trackMap"></div>` : ""}
+    <div class="trk-actions">
+      <button data-trk="replace">Reemplazar GPX</button>
+      <button data-trk="remove">Quitar</button>
+    </div>
+    <div class="wx-note">Importado de ${escapeHtml(t.fileName)} · subida/bajada con umbral ${MIN_ELE_DELTA} m</div>
+  </div>`;
+}
 
 function nivelClass(n) {
   if (n === 2.5) return "nivel-25";
@@ -612,6 +857,7 @@ function cardHTML(r) {
         ${r.km_aprox != null ? `<span class="badge km">${ICON("ruler",13)} ~${r.km_aprox} km</span>` : ""}
         <span class="badge">${fechaTxt}</span>
         ${r.ubicacion ? `<span class="badge">${ICON("pin",13)} ${escapeHtml(r.ubicacion)}</span>` : ""}
+        ${(() => { const t = getTrack(r.id); return t ? `<span class="badge track">${ICON("route",13)} ${t.km}km${t.ascentM!=null?` ↑${t.ascentM}m`:""}</span>` : ""; })()}
       </div>
       ${pfpsWarn}
       ${r.notas ? `<div class="nota">${escapeHtml(r.notas)}</div>` : ""}
@@ -772,12 +1018,64 @@ function openModal(r) {
     ${r.notas ? `<p style="color: var(--text-dim)"><em>${escapeHtml(r.notas)}</em></p>` : ""}
     ${r.nivel >= PFPS_RISK_MIN ? `<p style="color: var(--red); font-weight: 700">${ICON("alert",15)} Riesgo PFPS — nivel ${r.nivel}.<br>Bastones, ritmo descenso lento, rodilleras si knee-check no es "bien".</p>` : ""}
     <div id="weatherRow"></div>
+    <div id="trackRow">${trackSectionHTML(r.id)}</div>
+    <input type="file" id="gpxInput" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden>
     <button class="close" id="closeModal">Cerrar</button>
   `;
   document.getElementById("modal").innerHTML = html;
   document.getElementById("modalBg").classList.add("open");
   document.getElementById("closeModal").onclick = closeModal;
+  wireTrackSection(r);
   loadWeather(r);
+}
+
+function trackSectionHTML(id) {
+  const t = getTrack(id);
+  if (t) return trackCardHTML(t);
+  return `<div class="wx-card">
+    <div class="wx-title">Mi caminata</div>
+    <div class="wx-note" style="margin:0 0 9px">Graba la ruta con Wikiloc y exporta el .gpx para ver km y desnivel reales.</div>
+    <div class="trk-actions"><button class="trk-import" data-trk="import">${ICON("upload",14)} Importar GPX</button></div>
+  </div>`;
+}
+
+let trackMap = null;
+function wireTrackSection(r) {
+  const id = r.id;
+  const input = document.getElementById("gpxInput");
+  const row = document.getElementById("trackRow");
+  if (input) input.onchange = () => { if (input.files[0]) importGPXForRoute(id, input.files[0]); };
+  if (row) row.onclick = e => {
+    const b = e.target.closest("button[data-trk]"); if (!b) return;
+    const act = b.dataset.trk;
+    if (act === "import" || act === "replace") input.click();
+    else if (act === "remove") {
+      if (!confirm("¿Quitar la caminata importada de esta ruta?")) return;
+      if (STATE.rutas[id]) { delete STATE.rutas[id].track; saveState(); }
+      openModal(r); renderCurrent();
+    }
+  };
+  initTrackMap(getTrack(id));
+}
+function initTrackMap(t) {
+  if (trackMap) { trackMap.remove(); trackMap = null; }
+  if (!t || !t.path || !t.path.length) return;
+  const el = document.getElementById("trackMap");
+  if (!el) return;
+  if (typeof L === "undefined") {
+    el.innerHTML = `<div class="wx-note" style="padding:10px">Mapa no disponible (sin conexión la primera vez).</div>`;
+    return;
+  }
+  // Espera a que el modal sea visible para medir el contenedor
+  requestAnimationFrame(() => {
+    trackMap = L.map(el, { attributionControl: false, zoomControl: true });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(trackMap);
+    L.polyline(t.path, { color: "#10B981", weight: 4, opacity: 0.9 }).addTo(trackMap);
+    L.circleMarker(t.path[0], { radius: 5, color: "#FBBF24", fillColor: "#FBBF24", fillOpacity: 1 }).addTo(trackMap);
+    L.circleMarker(t.path[t.path.length-1], { radius: 5, color: "#10B981", fillColor: "#10B981", fillOpacity: 1 }).addTo(trackMap);
+    trackMap.fitBounds(t.bounds, { padding: [16, 16] });
+    setTimeout(() => trackMap && trackMap.invalidateSize(), 60);
+  });
 }
 
 // Clima en modal: solo si fecha dentro próximos 16 días, no pasada, y hay coords. Degrada en silencio.
@@ -830,7 +1128,10 @@ async function loadWeather(r) {
     row.innerHTML = ""; // fetch falló → no romper modal
   }
 }
-function closeModal() { document.getElementById("modalBg").classList.remove("open"); }
+function closeModal() {
+  document.getElementById("modalBg").classList.remove("open");
+  if (trackMap) { trackMap.remove(); trackMap = null; }
+}
 
 function exportData() {
   const marcadas = DATA.rutas
@@ -861,6 +1162,66 @@ function fallbackCopy(txt) {
     () => prompt("Copia manual:", txt)
   );
 }
+
+/* ---------- Sync modal (ajustes) ---------- */
+function updateGearState() {
+  const g = document.getElementById("syncGear");
+  if (g) g.classList.toggle("connected", !!getPat());
+}
+function openSync() {
+  const connected = !!getPat();
+  const syncedAt = localStorage.getItem("gist_synced_at");
+  const status = connected
+    ? `<div class="sync-status ok">${ICON("check",13)} Conectado${syncedAt ? " · último sync " + new Date(syncedAt).toLocaleString("es-CO",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"}) : ""}</div>`
+    : `<div class="sync-status">Sin conectar — los datos viven solo en este dispositivo.</div>`;
+  const html = `
+    <h2>${ICON("settings",18)} Sync / Backup</h2>
+    <p style="color:var(--text-dim);font-size:13px;margin-top:0">Respaldo en la nube y sincronización entre dispositivos vía GitHub Gist privado.</p>
+    ${status}
+    <input type="password" class="sync-field" id="patInput" placeholder="${connected ? "•••••••• (token guardado)" : "Pega tu token de GitHub aquí"}" autocomplete="off">
+    <button class="sync-btn" id="syncConnect">${connected ? "Actualizar token y sincronizar" : "Conectar y sincronizar"}</button>
+    ${connected ? `<button class="sync-btn ghost" id="syncDisconnect">Desconectar (borra token de este equipo)</button>` : ""}
+    <div class="sync-help">
+      <strong>Crear token (1 sola vez):</strong><br>
+      GitHub → Settings → Developer settings → <em>Fine-grained tokens</em> → Generate.<br>
+      Permiso: solo <strong>Gists</strong> (Read and write). Nada más.<br>
+      Pégalo arriba. Se guarda solo en este dispositivo, nunca en el código.<br>
+      <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">Abrir GitHub tokens →</a>
+    </div>
+    <button class="close" id="closeSync">Cerrar</button>
+  `;
+  document.getElementById("syncModal").innerHTML = html;
+  document.getElementById("syncBg").classList.add("open");
+  document.getElementById("closeSync").onclick = closeSync;
+  document.getElementById("syncConnect").onclick = async () => {
+    const v = document.getElementById("patInput").value.trim();
+    if (v) localStorage.setItem(PAT_KEY, v);
+    if (!getPat()) { alert("Pega un token primero."); return; }
+    const btn = document.getElementById("syncConnect");
+    btn.textContent = "Sincronizando…"; btn.disabled = true;
+    try {
+      await syncPull();   // trae remoto si es más nuevo
+      await pushNow();    // sube local (crea gist si no existe)
+      updateGearState();
+      openSync();
+    } catch (e) {
+      document.getElementById("syncModal").querySelector(".sync-status")?.remove();
+      const err = document.createElement("div");
+      err.className = "sync-status err";
+      err.textContent = "Error: " + e.message + " (¿token válido con permiso Gists?)";
+      document.getElementById("patInput").before(err);
+      btn.textContent = "Reintentar"; btn.disabled = false;
+    }
+  };
+  const dis = document.getElementById("syncDisconnect");
+  if (dis) dis.onclick = () => {
+    if (!confirm("¿Desconectar? Se borra el token de este dispositivo (tus datos locales se conservan).")) return;
+    localStorage.removeItem(PAT_KEY);
+    updateGearState();
+    openSync();
+  };
+}
+function closeSync() { document.getElementById("syncBg").classList.remove("open"); }
 
 function attachEvents() {
   document.getElementById("tabs").addEventListener("click", e => {
@@ -936,6 +1297,10 @@ function attachEvents() {
   document.getElementById("modalBg").addEventListener("click", e => {
     if (e.target.id === "modalBg") closeModal();
   });
+  document.getElementById("syncBg").addEventListener("click", e => {
+    if (e.target.id === "syncBg") closeSync();
+  });
+  document.getElementById("syncGear").addEventListener("click", openSync);
   document.getElementById("exportBtn").addEventListener("click", exportData);
 }
 
@@ -949,8 +1314,13 @@ async function init() {
     console.error(e);
     return;
   }
+  document.getElementById("syncGear").innerHTML = ICON("settings", 20);
   renderCurrent();
   renderBottomBar();
+  updateGearState();
+  // Sync inicial: trae estado remoto si es más nuevo. Silencioso si falla/offline.
+  syncPull().catch(() => {});
+  window.addEventListener("online", () => { pushNow().catch(() => {}); });
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }

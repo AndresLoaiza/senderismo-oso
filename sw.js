@@ -1,5 +1,9 @@
-const CACHE = 'senderismoso-v7';
-const ASSETS = ['./', './index.html', './manifest.json', './data/rutas.json'];
+const CACHE = 'senderismoso-v8';
+const ASSETS = [
+  './', './index.html', './manifest.json', './data/rutas.json',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {}));
@@ -15,8 +19,10 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  // Clima Open-Meteo: network-only, no cachear (forecast cambia a diario)
-  if (e.request.url.includes('api.open-meteo.com')) {
+  // Clima Open-Meteo + GitHub API + tiles de mapa: network-only, no cachear
+  if (e.request.url.includes('api.open-meteo.com') ||
+      e.request.url.includes('api.github.com') ||
+      e.request.url.includes('tile.openstreetmap.org')) {
     e.respondWith(fetch(e.request).catch(() => Response.error()));
     return;
   }
