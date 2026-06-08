@@ -42,7 +42,29 @@ STATE.rutas[id].track = {
 }
 ```
 
-Se guarda resumen + polilíneas submuestreadas, **no** el track crudo (una ruta de 3 h ≈ 10k puntos = demasiado para localStorage ~5 MB). `path` submuestreado a ~400 pts ≈ pocos KB.
+Se guarda resumen + polilíneas submuestreadas, **no** el track crudo (~400 pts ≈ pocos KB; a escala de mapa de teléfono no se ve diferencia con 10k pts crudos).
+
+## Almacenamiento: localStorage + Gist sync
+
+localStorage es la **fuente de verdad local** (instantáneo, offline). Encima, una capa de **sync a GitHub Gist** da backup en la nube y continuidad entre dispositivos / reinstalaciones de la PWA.
+
+### Seguridad del token (crítico)
+- El token (PAT de GitHub) **nunca** va en el código ni en el repo. Repo público = hardcodear token sería exponerlo a todos.
+- El usuario pega el token en una pantalla de **ajustes dentro de la app**. Se guarda solo en `localStorage` (`gh_pat`) de su dispositivo.
+- Token recomendado: **fine-grained**, permiso **solo "Gists" read/write** (mínimo privilegio). Revocable desde GitHub.
+- Sin token configurado → la app funciona igual con solo localStorage (el sync queda inactivo, degradación limpia).
+
+### Modelo de sync
+- Un gist privado guarda un único archivo `senderismo-oso-state.json` con el `STATE` completo.
+- Claves en localStorage: `gh_pat` (token), `gist_id` (id del gist), `state_updated_at` (ISO del último cambio local).
+- **Carga (app start):** si hay token + gist_id → `GET` gist. Merge **last-write-wins** por `state_updated_at` (el más reciente gana, local vs remoto). Sin red → usa localStorage.
+- **Guardado:** cada `saveState()` actualiza `state_updated_at` y agenda un `PATCH` al gist **debounced** (~3 s) para no llamar la API en cada toque. Falla/offline → reintenta al próximo cambio o al volver online (`online` event).
+- **Primer uso con token:** si no hay `gist_id`, `POST` crea el gist privado y guarda su id.
+- Conflictos: usuario único → last-write-wins basta. No merge a nivel de campo.
+- Errores de API (401 token malo, red caída) → aviso no intrusivo en ajustes; localStorage sigue intacto.
+
+### UI de ajustes
+- Icono/entrada "Sync" (engranaje) → modal: campo para pegar token, botón "Conectar", estado ("Conectado · último sync hh:mm" / "Sin conectar"), botón "Desconectar" (borra `gh_pat` local), enlace a instrucciones para crear el token.
 
 ## Componentes (todo en index.html, JS puro)
 
@@ -91,6 +113,7 @@ Nueva sección "Mi caminata" (después del clima, antes de Cerrar):
 ## Service Worker
 - Bump `CACHE` v7 → v8.
 - Agregar Leaflet CSS + JS (CDN) a la lista de precache para que la librería cargue offline (los **tiles** seguirán necesitando red — limitación inherente, aceptable).
+- `api.github.com` → network-only (no cachear, como ya se hace con open-meteo).
 
 ## Errores y degradación
 - GPX sin `<trkpt>` → "archivo sin recorrido", no guarda.
@@ -105,3 +128,4 @@ Nueva sección "Mi caminata" (después del clima, antes de Cerrar):
 ## Verificación pendiente (Andrés)
 - Importar un GPX real de Wikiloc y confirmar km/desnivel coherentes con lo que reporta Wikiloc.
 - Confirmar mapa visible en iPhone tras `Ctrl+Shift+R` / reinstalar PWA (SW v8).
+- Crear token fine-grained (solo Gists), pegarlo en ajustes, confirmar sync (marcar ruta en un dispositivo → aparece en otro).
