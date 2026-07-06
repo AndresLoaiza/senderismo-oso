@@ -50,5 +50,5 @@ Abre http://localhost:8000.
 
 ## Compañías
 
-- **A Todo Pulmón** — sin contacto público en flyer
+- **A Todo Pulmón** — WhatsApp +57 323 283 0298
 - **Caminantes 2.0** (operado por Explora Antioquia) — WhatsApp +57 302 465 46 55, https://www.exploraantioquia.com, RNT 211609
