@@ -6,9 +6,9 @@ Planeador de rutas de senderismo en Antioquia. PWA single-file. Catálogo de pro
 
 ## Features
 
-- 46 rutas Junio 2026 (26 ATP + 20 Caminantes 2.0)
-- 3 vistas: Catálogo, Calendario mes, Comparador (hasta 3 rutas)
-- Filtros: compañía, nivel (multi-toggle 1–5), días, día de semana, precio máx, búsqueda, estado
+- 180 rutas 2026 (4 compañías) — ATP con programación completa jul–dic sacada de atodopulmon.co
+- 3 vistas: Catálogo, Calendario multi-mes, Comparador (hasta 3 rutas)
+- Filtros: compañía, nivel (multi-toggle 1–5), días, día de semana, precio máx, búsqueda, estado, **vigencia** (Próximas / Todas / Historial)
 - Estados ruta persistentes: ★ Interés / 📅 Planeada / ✓ Confirmada / 🏁 Hecha / ✗ Descartar
 - Warning PFPS automático para nivel ≥ 4 (riesgo rodilla)
 - Itinerario exportable a portapapeles / share API
