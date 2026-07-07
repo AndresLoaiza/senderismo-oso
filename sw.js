@@ -1,4 +1,4 @@
-const CACHE = 'senderismoso-v12';
+const CACHE = 'senderismoso-v13';
 const ASSETS = [
   './', './index.html', './manifest.json', './data/rutas.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
