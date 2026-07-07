@@ -191,6 +191,10 @@
   .cal-cell .dot.lv-4 { background: var(--red); }
   .cal-cell .dot.lv-5 { background: var(--red); border: 1px solid var(--text); }
   .cal-cell.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .cal-cell.today .day-num { color: var(--accent); }
+  .cal-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 10px; font-size: 14px; }
+  .cal-nav button { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: 8px; color: var(--text); padding: 4px 8px; cursor: pointer; display: flex; align-items: center; }
+  .cal-nav strong { min-width: 140px; text-align: center; }
 
   /* Comparador */
   .compare-empty { text-align: center; padding: 40px 16px; color: var(--text-dim); }
@@ -310,7 +314,7 @@
   <div class="title-row">
     <div>
       <h1><svg class="ico ico-brand" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> Senderismoso</h1>
-      <div class="sub">A Todo Pulmón · Caminantes 2.0 · Entre Yarumos · Vámonos de Caminata · Junio 2026</div>
+      <div class="sub">A Todo Pulmón · Caminantes 2.0 · Entre Yarumos · Vámonos de Caminata · 2026</div>
     </div>
     <button class="sync-gear" id="syncGear" title="Sync / ajustes" aria-label="Sync y ajustes"></button>
   </div>
@@ -372,6 +376,12 @@
     <button class="chip" data-filter="estado" data-value="sin-descartar">Sin descartadas</button>
   </div>
   <div class="filter-row">
+    <div class="filter-label">Vigencia</div>
+    <button class="chip active" data-filter="vigencia" data-value="futuras">Próximas</button>
+    <button class="chip" data-filter="vigencia" data-value="todas">Todas</button>
+    <button class="chip" data-filter="vigencia" data-value="historial">Historial</button>
+  </div>
+  <div class="filter-row">
     <div class="search-wrap">
       <svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       <input type="search" id="search" placeholder="Buscar por nombre, lugar, palabra…">
@@ -422,7 +432,9 @@ const ICON_PATHS = {
   calendar: '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>',
   settings: '<path d="M12.2 2h-.4a2 2 0 0 0-2 2 1.7 1.7 0 0 1-2.6 1.4 2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7A1.7 1.7 0 0 1 5 12a1.7 1.7 0 0 1-.9 1.5 2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7A1.7 1.7 0 0 1 9 18.9a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2 1.7 1.7 0 0 1 2.6-1.4 2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7A1.7 1.7 0 0 1 19 12a1.7 1.7 0 0 1 .9-1.5 2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7A1.7 1.7 0 0 1 14.2 4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/>',
   upload:   '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
-  route:    '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>'
+  route:    '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+  chevronLeft:  '<path d="m15 18-6-6 6-6"/>',
+  chevronRight: '<path d="m9 18 6-6-6-6"/>'
 };
 function ICON(name, size) {
   size = size || 14;
@@ -541,11 +553,15 @@ let FILTERS = {
   dias: "all",
   dow: [],
   estado: "all",
+  vigencia: "futuras",
   precioMax: 2600000,
   search: ""
 };
 let VIEW = "catalogo";
 let CAL_SELECTED_DAY = null;
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+let CAL_YEAR = +TODAY_ISO.slice(0, 4);
+let CAL_MONTH = +TODAY_ISO.slice(5, 7) - 1; // 0-indexed
 
 function loadState() {
   try {
@@ -813,6 +829,10 @@ function applyFilters(rutas) {
     if (FILTERS.precioMax && r.precio_cop > FILTERS.precioMax) return false;
     if (FILTERS.estado === "marcadas" && !["interesada","planeada","confirmada","completada"].includes(getEstado(r.id))) return false;
     if (FILTERS.estado === "sin-descartar" && getEstado(r.id) === "descartada") return false;
+    const esPasada = r.fecha_fin < TODAY_ISO;
+    const esHecha = getEstado(r.id) === "completada";
+    if (FILTERS.vigencia === "futuras" && esPasada && !esHecha) return false;
+    if (FILTERS.vigencia === "historial" && !esPasada && !esHecha) return false;
     if (FILTERS.search) {
       const q = FILTERS.search.toLowerCase();
       const hay = [r.nombre, r.subtitulo, r.ubicacion, r.punto_encuentro, (r.incluye||[]).join(" "), r.notas].filter(Boolean).join(" ").toLowerCase();
@@ -897,26 +917,35 @@ function renderCalendario() {
     }
   });
 
-  const year = 2026, month = 5; // jun
+  const year = CAL_YEAR, month = CAL_MONTH;
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month+1, 0);
   const startDow = (firstDay.getDay() + 6) % 7; // lun=0
   const totalDays = lastDay.getDate();
+  const monthStr = String(month+1).padStart(2,"0");
+  const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
+  let html = `<div class="cal-nav">
+    <button data-cal-nav="-1">${ICON("chevronLeft",16)}</button>
+    <strong>${MESES[month]} ${year}</strong>
+    <button data-cal-nav="1">${ICON("chevronRight",16)}</button>
+  </div>`;
+  html += `<div class="calendar">`;
   const head = ["L","M","X","J","V","S","D"];
-  let html = `<div class="calendar">`;
   head.forEach(h => html += `<div class="cal-head">${h}</div>`);
   for (let i = 0; i < startDow; i++) html += `<div class="cal-cell empty"></div>`;
   for (let day = 1; day <= totalDays; day++) {
-    const date = `2026-06-${String(day).padStart(2,"0")}`;
+    const date = `${year}-${monthStr}-${String(day).padStart(2,"0")}`;
     const rutas = byDay[date] || [];
     const dow = new Date(year, month, day).getDay();
     const isWeekend = dow === 0 || dow === 6;
-    const isFestivo = FESTIVOS_JUN_2026.includes(date);
+    const isFestivo = month === 5 && FESTIVOS_JUN_2026.includes(date);
+    const isToday = date === TODAY_ISO;
     const cls = ["cal-cell"];
     if (rutas.length) cls.push("has");
     if (isWeekend) cls.push("weekend");
     if (isFestivo) cls.push("festivo");
+    if (isToday) cls.push("today");
     if (CAL_SELECTED_DAY === date) cls.push("selected");
     const dots = rutas.slice(0,12).map(r => `<span class="dot ${nivelClass(r.nivel)}"></span>`).join("");
     html += `<div class="${cls.join(" ")}" data-date="${date}">
@@ -936,7 +965,7 @@ function renderCalendario() {
   }
 
   document.getElementById("content").innerHTML = html;
-  document.getElementById("statText").textContent = `Junio 2026 · ${rutas.length} rutas filtradas`;
+  document.getElementById("statText").textContent = `${MESES[month]} ${year} · ${rutas.length} rutas filtradas`;
 }
 
 function renderComparador() {
@@ -1269,14 +1298,26 @@ function attachEvents() {
     renderCurrent();
   });
   document.getElementById("resetFilters").addEventListener("click", () => {
-    FILTERS = { compania: "all", nivel: [], dias: "all", dow: [], estado: "all", precioMax: 2600000, search: "" };
-    document.querySelectorAll("#filters .chip").forEach(c => c.classList.toggle("active", c.dataset.value === "all"));
+    FILTERS = { compania: "all", nivel: [], dias: "all", dow: [], estado: "all", vigencia: "futuras", precioMax: 2600000, search: "" };
+    document.querySelectorAll("#filters .chip").forEach(c => {
+      const isVigencia = c.dataset.filter === "vigencia";
+      c.classList.toggle("active", isVigencia ? c.dataset.value === "futuras" : c.dataset.value === "all");
+    });
     document.getElementById("priceMax").value = 2600000;
     document.getElementById("priceMaxLabel").textContent = "$2.600.000";
     document.getElementById("search").value = "";
     renderCurrent();
   });
   document.getElementById("content").addEventListener("click", e => {
+    const navBtn = e.target.closest("button[data-cal-nav]");
+    if (navBtn && VIEW === "calendario") {
+      CAL_MONTH += +navBtn.dataset.calNav;
+      if (CAL_MONTH > 11) { CAL_MONTH = 0; CAL_YEAR++; }
+      if (CAL_MONTH < 0) { CAL_MONTH = 11; CAL_YEAR--; }
+      CAL_SELECTED_DAY = null;
+      renderCalendario();
+      return;
+    }
     const cell = e.target.closest(".cal-cell[data-date]");
     if (cell && VIEW === "calendario") {
       CAL_SELECTED_DAY = CAL_SELECTED_DAY === cell.dataset.date ? null : cell.dataset.date;
