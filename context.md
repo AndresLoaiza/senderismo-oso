@@ -2,7 +2,37 @@
 
 _Handoff entre sesiones. Estado operativo (qué hacer). Para qué es el proyecto → ver [README.md](README.md)._
 
-## Estado actual (2026-06-07)
+## Estado actual (2026-07-06) — sesión tarde
+
+**ATP reconstruido desde atodopulmon.co (web, no WhatsApp).** El catálogo WhatsApp de ATP solo traía el mes; la web tiene página por paquete con lista de fechas de TODO el año. Barrí el `product-sitemap.xml` (~57 URLs), filtré fuera internacionales/playa (Amazonas, Perú, Guatemala, Cumbal, Nuquí, tiburón ballena, Isla Fuerte, Tatacoa), fetché ~40 páginas de paquetes Antioquia + treks Colombia, y reconstruí la sección `atp` de `data/rutas.json` con script (`scratchpad/build_atp.js`).
+- **114 rutas ATP** (una por fecha, solo fechas con `fecha_fin >= hoy`). Total dataset ahora **180 rutas** (atp 114, vdc 32, ea 22, eyt 12).
+- ATP julio pasó de 2 → **16**. Julio total app: 23 (atp 16 + vdc 7). ea/eyt siguen sin julio (no publican catálogo digital, solo Instagram/flyer).
+- **Discrepancia resuelta:** WhatsApp Murillo decía jul 19-20 (2d); web dice jul 18-20 (3d). Usé la **web** (autoritativa, más completa).
+- Niveles de la web snapeados a buckets del app. Nivel 5 nuevo en varios (Sonsón amanecer, Farallones Citará, Nevado Tolima) — PFPS riesgo alto marcado en notas.
+- Fechas pasadas ATP (ene-jun) NO se importaron (ya no son reservables; el filtro Vigencia las ocultaría igual). ea/eyt/vdc SÍ conservan sus entradas de junio pasadas — inconsistencia menor, sin efecto (filtro Próximas las oculta).
+- Backup del rutas.json previo en `scratchpad/rutas_backup.json`.
+- SW v9→v10.
+
+### Estado anterior (2026-07-06) — mañana
+
+**Sesión 2026-07-06 (contacto WhatsApp ATP + import catálogo real) — sin commitear aún.**
+
+- Andrés dio el WhatsApp de A Todo Pulmón (+57 323 283 0298), faltaba en `data/rutas.json` (`contacto: null`).
+- Saqué el catálogo real vía bridge WhatsApp Business (proyecto hermano `Whatsapp_AltaComedia`, server corriendo en **puerto 3009** en este PC — no 3000, ojo si se reinicia). Endpoint `GET /catalog?to=<tel>` (getBusinessProfile+getCatalog+getCollections), mismo patrón usado con vdc en junio.
+- **RNT ATP confirmado: 153154** (agregado a `data/rutas.json`).
+- Catálogo trae programación **todo el año 2026** (no solo el mes), a diferencia de ATP/EA que publican mes a mes. Agregadas **8 rutas nuevas** con fechas futuras (jul-dic 2026): Murillo Tolima (jul19-20, ago29-30), Belmira nocturno (sep5-6, nov7-8), Nevado Santa Isabel (sep18-20, dic11-13), Putumayo Místico (nov13-16), La Danta (jul13 — fecha inconsistente en el flyer, confirmar con ATP).
+- **Pendiente:** revisar si conviene traer también las fechas pasadas de 2026 (ene-jun) que trae el catálogo para historial, o descartarlas. Faltan por normalizar rutas de baja prioridad para Andrés (Putumayo/Nevado son multi-día alta montaña/selva, no trekking corto — nivel PFPS alto en Nevado).
+- Server WhatsApp bridge tuvo conflicto (código 440 "replaced") al intentar levantar una instancia nueva en puerto 3000 — ya había una corriendo en 3009. Maté el proceso duplicado (PID 28800) para no arriesgar la sesión real de WhatsApp.
+- **Commiteado y pusheado a main (`292913e`):** WhatsApp+RNT ATP + 8 rutas jul-dic.
+- **Segunda ronda (mismo día):** repetí el mismo proceso para las otras 3 compañías vía `/catalog?to=<tel>` (puerto 3009):
+  - **ea (Caminantes 2.0):** perfil confirma RNT 211609 (ya coincidía) + email `info@exploraantioquia.com` + dirección física (La Ceja). **Sin productos/colecciones en catálogo WhatsApp** — no hay rutas nuevas que importar de ahí.
+  - **eyt (Entre Yarumos Travels):** RNT nuevo **284028** + email `entreyarumos@gmail.com`. Igual sin catálogo de productos.
+  - **vdc (Vámonos de Caminata):** SÍ tiene catálogo con colecciones ("Grandes Experiencias Junio", "Colombia 2do Semestre", "EXPERIENCIAS JULIO"). Importé **7 rutas julio 2026** nuevas de la colección julio (Viaducto Amagá 12jul, Cascada la Honda 18jul, Melcocho Extremo 19jul, Barbosa-Concepción 19jul, Peñón Entrerríos 20jul festivo, Cascadas Barbosa 25jul, Quitasol-San Pedro 26jul). **2 productos de esa misma colección tenían fechas de junio ya pasadas** (Laguna Encantada 13jun, Charcos de Santiago 4jun) — descartados por obsoletos, mismo patrón de inconsistencia que vi con ATP (La Danta).
+  - Niveles decimales de vdc snapeados a 0.5 más cercano (convención ya usada en el archivo), nivel_original conserva el texto/decimal literal del operador.
+  - **No importado (pendiente si Andrés quiere):** colecciones "Grandes Experiencias Junio" y "Colombia 2do Semestre" de vdc — expediciones multi-día fuera de Antioquia (Cocuy, Bahía Solano/Nuquí ballenas, Tatacoa, Isla Fuerte) + 2 productos de merch (camisetas). No son rutas de senderismo local de un día, se dejaron fuera del alcance de esta pasada.
+  - Total ahora: **101 rutas** (atp 35, ea 22, eyt 12, vdc 32). **Sin commitear esta segunda ronda todavía.**
+
+### Estado anterior (2026-06-07)
 
 **Sesión 2026-06-07 (GPX import + bitácora + Gist sync) — pusheado a main `3f3878f`. SW v7→v8 (cache `senderismoso-v8`). OJO: remote renombró el proyecto "Senderismo Oso → Senderismoso" (`add0d79`); rebaseé encima, resolví conflicto sw.js.**
 
